@@ -55,6 +55,7 @@ export default function ProductDetailPage() {
   const [activeTab, setActiveTab] = useState<Tab>('Overview');
   const [error, setError] = useState('');
   const [images, setImages] = useState<Record<string, { id: string; slot: string; filename: string; path: string }> | null>(null);
+  const [cacheBusters, setCacheBusters] = useState<Record<string, string>>({});
   const [uploadingSlot, setUploadingSlot] = useState<string | null>(null);
   const [deletingSlot, setDeletingSlot] = useState<string | null>(null);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -140,6 +141,10 @@ export default function ProductDetailPage() {
       }
 
       setImages((current) => ({ ...(current ?? {}), [slot]: data.image }));
+      setCacheBusters((current) => ({
+        ...current,
+        [slot]: `${Date.now()}`,
+      }));
       setMessage({ type: 'success', text: `Gambar ${slot} berhasil disimpan.` });
     } catch (err) {
       setMessage({ type: 'error', text: (err as Error).message });
@@ -386,7 +391,11 @@ export default function ProductDetailPage() {
                           </div>
                           <div className="mt-4 flex h-[250px] items-center justify-center overflow-hidden rounded-3xl bg-slate-100 text-slate-400">
                             {image ? (
-                              <img src={image.path} alt={`${slot} preview`} className="h-full w-full object-cover" />
+                              <img
+                                src={`${image.path}${cacheBusters[slot] ? `?cb=${cacheBusters[slot]}` : ''}`}
+                                alt={`${slot} preview`}
+                                className="h-full w-full object-cover"
+                              />
                             ) : (
                               <UploadCloud className="h-12 w-12" />
                             )}
