@@ -176,7 +176,7 @@ export default function ProductDetailPage() {
 
   async function handleDeleteImage(slot: string) {
     if (!id) return;
-    const confirmed = window.confirm(`Hapus gambar ${slot}? Aksi ini tidak dapat dibatalkan.`);
+    const confirmed = window.confirm('Yakin ingin menghapus gambar Front?');
     if (!confirmed) return;
 
     setMessage(null);
@@ -194,6 +194,11 @@ export default function ProductDetailPage() {
 
       setImages((current) => {
         if (!current) return current;
+        const next = { ...current };
+        delete next[slot];
+        return next;
+      });
+      setCacheBusters((current) => {
         const next = { ...current };
         delete next[slot];
         return next;
