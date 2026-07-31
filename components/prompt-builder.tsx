@@ -1,0 +1,182 @@
+'use client';
+
+import { useEffect, useMemo, useState } from 'react';
+import { cameras, lights, scenes } from '@/lib/data';
+
+type StoredProduct = {
+  id: string;
+  code: string;
+  name: string;
+  brand: string;
+  category: string;
+  targetAge: string;
+  theme: string;
+  shellMaterial: string;
+  visor: string;
+  buckle: string;
+  status: string;
+  description: string;
+  referenceFiles?: Record<string, string>;
+};
+
+const fallbackProduct: StoredProduct = {
+  id: 'captain-america',
+  code: 'RR-KID-CAP01',
+  name: 'Helm Anak Captain America',
+  brand: 'RetroRide',
+  category: 'Kids Half Face Helmet',
+  targetAge: '5–8 tahun',
+  theme: 'Captain America',
+  shellMaterial: 'ABS Glossy',
+  visor: 'Smoke Polycarbonate',
+  buckle: 'Quick Release Orange',
+  status: 'Active',
+  description: 'Helm anak dengan logo RetroRide pada bagian atas.',
+  referenceFiles: {},
+};
+
+export function PromptBuilder() {
+  const [products, setProducts] = useState<StoredProduct[]>([fallbackProduct]);
+  const [productId, setProductId] = useState(fallbackProduct.id);
+  const [sceneId, setSceneId] = useState(scenes[0].id);
+  const [cameraId, setCameraId] = useState(cameras[0].id);
+  const [lightId, setLightId] = useState(lights[0].id);
+  const [platform, setPlatform] = useState('Google Flow / Veo');
+  const [aspect, setAspect] = useState('1:1');
+  const [duration, setDuration] = useState('8 seconds');
+  const [notice, setNotice] = useState('');
+
+  useEffect(() => {
+    const saved = window.localStorage.getItem('ai-studio-products');
+    if (!saved) return;
+    try {
+      const parsed = JSON.parse(saved) as StoredProduct[];
+      if (parsed.length) {
+        setProducts(parsed);
+        setProductId(parsed[0].id);
+      }
+    } catch {
+      setProducts([fallbackProduct]);
+    }
+  }, []);
+
+  const product = products.find((item) => item.id === productId) ?? products[0];
+  const scene = scenes.find((item) => item.id === sceneId) ?? scenes[0];
+  const camera = cameras.find((item) => item.id === cameraId) ?? cameras[0];
+  const light = lights.find((item) => item.id === lightId) ?? lights[0];
+  const referenceCount = Object.keys(product?.referenceFiles ?? {}).length;
+
+  const prompt = useMemo(() => {
+    if (!product) return '';
+    return `Create a premium, photorealistic commercial product video for ${platform}. Use the seven supplied reference images as the only visual source of truth.
+
+PRODUCT IDENTITY
+Product: ${product.name}
+Code: ${product.code}
+Brand: ${product.brand}
+Category: ${product.category}
+Target age: ${product.targetAge}
+Theme: ${product.theme}
+
+PRODUCT LOCK
+Preserve the exact original shell geometry, proportions, ${product.shellMaterial}, black trim, screw positions, visor mounting points, strap and ${product.buckle}. Keep the ${product.visor} visor closed and physically accurate.
+
+GRAPHIC & BRAND LOCK
+Preserve the exact ${product.theme} artwork, colors, decal scale and placement. Preserve the RetroRide logo on the top of the helmet exactly as shown in the top-view reference. The logo must remain visible, correctly spelled, undistorted and in its original position. Do not invent, remove or reposition any graphic.
+
+REFERENCE PRIORITY
+Front establishes the main shape. Front-left and front-right establish three-quarter geometry. Left and right establish side graphics. Back establishes rear construction. Top view establishes the upper shell shape and brand-logo placement.
+
+SCENE
+${scene.text}. The environment must support the product and never cover the helmet, visor, graphics or logo.
+
+CAMERA
+${camera.text}. Use smooth, stable movement and a realistic focal length. No wide-angle deformation.
+
+LIGHTING
+${light.text}. Preserve the real product colors, gloss and material response. Avoid blown highlights that hide the logo or graphics.
+
+MOTION & PHYSICS LOCK
+The helmet is rigid. No morphing, stretching, wobbling or independent movement of parts. The visor stays closed. Reflections move naturally with the camera and lighting.
+
+NEGATIVE PROMPT
+No redesign, changed logo, misspelled text, altered decal, extra vents, missing screws, duplicated parts, warped visor, changed shell shape, floating strap, hands, watermark, subtitles, random text, flicker, jitter or visual artifacts.
+
+OUTPUT
+Commercial quality, photorealistic, sharp product detail, ${aspect} aspect ratio, ${duration}, suitable for marketplace and social-media advertising.`;
+  }, [product, scene, camera, light, platform, aspect, duration]);
+
+  async function copyPrompt() {
+    await navigator.clipboard.writeText(prompt);
+    setNotice('Prompt berhasil disalin.');
+  }
+
+  function exportTxt() {
+    const url = URL.createObjectURL(new Blob([prompt], { type: 'text/plain;charset=utf-8' }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${product.code}-${scene.id}-${camera.id}.txt`;
+    link.click();
+    URL.revokeObjectURL(url);
+    setNotice('File TXT berhasil dibuat.');
+  }
+
+  return (
+    <div className="prompt-layout">
+      <section className="card prompt-controls">
+        <div className="form-grid">
+          <label>Product
+            <select value={productId} onChange={(event) => setProductId(event.target.value)}>
+              {products.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+            </select>
+          </label>
+          <label>Platform
+            <select value={platform} onChange={(event) => setPlatform(event.target.value)}>
+              <option>Google Flow / Veo</option><option>Imagen</option><option>ChatGPT Image</option><option>Kling</option>
+            </select>
+          </label>
+          <label>Scene
+            <select value={sceneId} onChange={(event) => setSceneId(event.target.value)}>
+              {scenes.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+            </select>
+          </label>
+          <label>Camera
+            <select value={cameraId} onChange={(event) => setCameraId(event.target.value)}>
+              {cameras.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+            </select>
+          </label>
+          <label>Lighting
+            <select value={lightId} onChange={(event) => setLightId(event.target.value)}>
+              {lights.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+            </select>
+          </label>
+          <label>Aspect Ratio
+            <select value={aspect} onChange={(event) => setAspect(event.target.value)}>
+              <option>1:1</option><option>9:16</option><option>16:9</option>
+            </select>
+          </label>
+          <label>Duration
+            <select value={duration} onChange={(event) => setDuration(event.target.value)}>
+              <option>6 seconds</option><option>8 seconds</option><option>10 seconds</option>
+            </select>
+          </label>
+        </div>
+
+        <div className={`reference-status ${referenceCount === 7 ? 'complete' : ''}`}>
+          <div><strong>Reference readiness</strong><span>{referenceCount}/7 photos recorded</span></div>
+          <div className="progress-track"><span style={{ width: `${(referenceCount / 7) * 100}%` }} /></div>
+          <small>{referenceCount === 7 ? 'Semua sudut sudah lengkap.' : 'Lengkapi 7 foto pada menu Products. Top view wajib menampilkan logo.'}</small>
+        </div>
+      </section>
+
+      <section className="card prompt-output">
+        <div className="prompt-output-header">
+          <div><div className="eyebrow">Generated prompt</div><strong>{product?.code}</strong></div>
+          <div className="prompt-actions"><button className="btn" onClick={copyPrompt}>Copy Prompt</button><button className="btn secondary" onClick={exportTxt}>Export TXT</button></div>
+        </div>
+        {notice && <div className="inline-notice">{notice}</div>}
+        <textarea readOnly value={prompt} aria-label="Generated prompt" />
+      </section>
+    </div>
+  );
+}

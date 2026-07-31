@@ -1,0 +1,1 @@
+export default function Page(){return <><div className="header"><div><h1>Content</h1><div className="muted">Modul ini sudah disiapkan untuk tahap berikutnya.</div></div></div><div className="card"><h2>Segera dikembangkan</h2><p className="muted">Struktur halaman sudah tersedia agar penambahan fitur berikutnya tidak mengubah pondasi aplikasi.</p></div></>}
