@@ -14,6 +14,14 @@ const slotFileNames: Record<string, string> = {
 };
 
 const allowedSlots = new Set(Object.keys(slotFileNames));
+const allowedMimeTypes = new Set(['image/jpeg', 'image/png', 'image/webp']);
+const extensionByMime: Record<string, string> = {
+  'image/jpeg': '.jpg',
+  'image/png': '.png',
+  'image/webp': '.webp',
+};
+const allowedExtensions = new Set(['.jpg', '.jpeg', '.png', '.webp']);
+const maxFileSize = 10 * 1024 * 1024;
 
 export async function GET(
   request: Request,
@@ -50,6 +58,19 @@ export async function POST(
     return NextResponse.json({ error: 'File is required.' }, { status: 400 });
   }
 
+  if (file.size > maxFileSize) {
+    return NextResponse.json({ error: 'File size must be 10 MB or smaller.' }, { status: 400 });
+  }
+
+  const extension = path.extname(file.name).toLowerCase();
+  const normalizedExtension = allowedExtensions.has(extension)
+    ? extension
+    : extensionByMime[file.type] ?? '';
+
+  if (!normalizedExtension || !(allowedMimeTypes.has(file.type) || allowedExtensions.has(extension))) {
+    return NextResponse.json({ error: 'Invalid image format. Only jpg, jpeg, png, and webp are accepted.' }, { status: 400 });
+  }
+
   const product = await prisma.product.findUnique({
     where: { id },
     select: { id: true, code: true },
@@ -62,12 +83,9 @@ export async function POST(
   const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'products', product.code);
   await fs.mkdir(uploadDir, { recursive: true });
 
-  const filename = `${slotFileNames[slot]}${path.extname(file.name) || '.jpg'}`;
+  const filename = `${slotFileNames[slot]}${normalizedExtension}`;
   const targetPath = path.join(uploadDir, filename);
   const buffer = Buffer.from(await file.arrayBuffer());
-  await fs.writeFile(targetPath, buffer);
-
-  const filePath = `/uploads/products/${product.code}/${filename}`;
 
   const existing = await prisma.productImage.findUnique({
     where: {
@@ -77,6 +95,17 @@ export async function POST(
       },
     },
   });
+
+  if (existing) {
+    const previousPath = path.join(process.cwd(), 'public', existing.path);
+    if (previousPath !== targetPath) {
+      await fs.unlink(previousPath).catch(() => null);
+    }
+  }
+
+  await fs.writeFile(targetPath, buffer);
+
+  const filePath = `/uploads/products/${product.code}/${filename}`;
 
   const image = existing
     ? await prisma.productImage.update({

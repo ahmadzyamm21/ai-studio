@@ -56,6 +56,8 @@ export default function ProductDetailPage() {
   const [error, setError] = useState('');
   const [images, setImages] = useState<Record<string, { id: string; slot: string; filename: string; path: string }> | null>(null);
   const [uploadingSlot, setUploadingSlot] = useState<string | null>(null);
+  const [deletingSlot, setDeletingSlot] = useState<string | null>(null);
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const uploadInputs = useRef<Record<string, HTMLInputElement | null>>({});
 
   useEffect(() => {
@@ -95,6 +97,7 @@ export default function ProductDetailPage() {
   async function fetchImages(productId: string) {
     const response = await fetch(`/api/products/${productId}/images`);
     if (!response.ok) {
+      setMessage({ type: 'error', text: 'Gagal memuat gambar referensi.' });
       return;
     }
 
@@ -119,6 +122,7 @@ export default function ProductDetailPage() {
 
   async function uploadImage(slot: string, file: File) {
     if (!id) return;
+    setMessage(null);
     setUploadingSlot(slot);
     const formData = new FormData();
     formData.append('slot', slot);
@@ -130,13 +134,15 @@ export default function ProductDetailPage() {
         body: formData,
       });
 
+      const data = await response.json();
       if (!response.ok) {
-        const data = await response.json().catch(() => null);
-        throw new Error(data?.error ?? 'Failed to upload image.');
+        throw new Error(data?.error ?? 'Gagal mengunggah gambar.');
       }
 
-      const data = await response.json();
       setImages((current) => ({ ...(current ?? {}), [slot]: data.image }));
+      setMessage({ type: 'success', text: `Gambar ${slot} berhasil disimpan.` });
+    } catch (err) {
+      setMessage({ type: 'error', text: (err as Error).message });
     } finally {
       setUploadingSlot(null);
     }
@@ -145,101 +151,55 @@ export default function ProductDetailPage() {
   async function handleFileChange(slot: string, event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     if (!file) return;
+
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      setMessage({ type: 'error', text: 'Format tidak diterima. Gunakan JPG, PNG, atau WEBP.' });
+      event.target.value = '';
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      setMessage({ type: 'error', text: 'Ukuran file maksimal 10 MB.' });
+      event.target.value = '';
+      return;
+    }
+
     await uploadImage(slot, file);
     event.target.value = '';
   }
 
   async function handleDeleteImage(slot: string) {
     if (!id) return;
-    const response = await fetch(`/api/products/${id}/images?slot=${encodeURIComponent(slot)}`, {
-      method: 'DELETE',
-    });
+    const confirmed = window.confirm(`Hapus gambar ${slot}? Aksi ini tidak dapat dibatalkan.`);
+    if (!confirmed) return;
 
-    if (!response.ok) {
-      return;
+    setMessage(null);
+    setDeletingSlot(slot);
+
+    try {
+      const response = await fetch(`/api/products/${id}/images?slot=${encodeURIComponent(slot)}`, {
+        method: 'DELETE',
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data?.error ?? 'Gagal menghapus gambar.');
+      }
+
+      setImages((current) => {
+        if (!current) return current;
+        const next = { ...current };
+        delete next[slot];
+        return next;
+      });
+      setMessage({ type: 'success', text: `Gambar ${slot} berhasil dihapus.` });
+    } catch (err) {
+      setMessage({ type: 'error', text: (err as Error).message });
+    } finally {
+      setDeletingSlot(null);
     }
-
-    setImages((current) => {
-      if (!current) return current;
-      const next = { ...current };
-      delete next[slot];
-      return next;
-    });
   }
-
-  const referenceImagesContent = (
-    <div className="space-y-6">
-      <div className="rounded-3xl border border-slate-200 bg-slate-50 p-6">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h2 className="text-xl font-semibold text-slate-950">Reference Images</h2>
-            <p className="mt-2 text-sm text-slate-500">
-              Upload gambar referensi untuk setiap sudut produk.
-            </p>
-          </div>
-          <div className="text-sm text-slate-500">Saved in public/uploads/products/{product?.code}</div>
-        </div>
-
-        <div className="mt-6 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-          {imageSlots.map((slot) => {
-            const image = images?.[slot];
-            return (
-              <div key={slot} className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
-                <div className="aspect-[4/3] overflow-hidden rounded-3xl bg-slate-100">
-                  {image ? (
-                    <img
-                      src={image.path}
-                      alt={`${slot} preview`}
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <div className="flex h-full flex-col items-center justify-center gap-2 px-3 text-center text-slate-400">
-                      <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-slate-200 text-slate-500">
-                        <UploadCloud className="h-6 w-6" />
-                      </div>
-                      <div className="text-sm font-semibold">{slot}</div>
-                      <p className="text-xs text-slate-500">No image uploaded</p>
-                    </div>
-                  )}
-                </div>
-                <div className="mt-4 space-y-3">
-                  <div className="flex flex-wrap gap-2">
-                    <button
-                      type="button"
-                      className="inline-flex items-center gap-2 rounded-2xl bg-slate-950 px-4 py-2 text-xs font-semibold text-white transition hover:bg-slate-800"
-                      onClick={() => uploadInputs.current[slot]?.click()}
-                      disabled={uploadingSlot === slot}
-                    >
-                      <UploadCloud className="h-4 w-4" />
-                      {image ? 'Replace' : 'Upload'}
-                    </button>
-                    <button
-                      type="button"
-                      className="inline-flex items-center gap-2 rounded-2xl bg-rose-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60"
-                      onClick={() => handleDeleteImage(slot)}
-                      disabled={!image || uploadingSlot === slot}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                      Delete
-                    </button>
-                  </div>
-                  <input
-                    ref={(element) => {
-                      uploadInputs.current[slot] = element;
-                    }}
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(event) => handleFileChange(slot, event)}
-                  />
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    </div>
-  );
 
   const overviewFields = useMemo(
     () =>
@@ -405,60 +365,95 @@ export default function ProductDetailPage() {
                     <div>
                       <h2 className="text-xl font-semibold text-slate-950">Reference Images</h2>
                       <p className="mt-2 text-sm text-slate-500">
-                        Upload gambar referensi untuk setiap sudut produk.
+                        Preview UI untuk semua slot gambar referensi produk.
                       </p>
                     </div>
                     <div className="text-sm text-slate-500">Saved in public/uploads/products/{product.code}</div>
                   </div>
 
-                  <div className="mt-6 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+                  <div className="mt-6 grid gap-6 grid-cols-1 sm:grid-cols-2 xl:grid-cols-4">
                     {imageSlots.map((slot) => {
                       const image = images?.[slot];
+                      const isFrontSlot = slot === 'Front';
+                      const hasImage = Boolean(image);
+                      const isBusy = uploadingSlot === slot || deletingSlot === slot;
+
                       return (
-                        <div key={slot} className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
-                          <div className="aspect-[4/3] overflow-hidden rounded-3xl bg-slate-100">
+                        <div key={slot} className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+                          <div className="flex items-center justify-between gap-2">
+                            <h3 className="text-sm font-semibold text-slate-900">{slot}</h3>
+                            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">250x250</span>
+                          </div>
+                          <div className="mt-4 flex h-[250px] items-center justify-center overflow-hidden rounded-3xl bg-slate-100 text-slate-400">
                             {image ? (
                               <img src={image.path} alt={`${slot} preview`} className="h-full w-full object-cover" />
                             ) : (
-                              <div className="flex h-full flex-col items-center justify-center gap-2 px-3 text-center text-slate-400">
-                                <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-slate-200 text-slate-500">
-                                  <UploadCloud className="h-6 w-6" />
-                                </div>
-                                <div className="text-sm font-semibold">{slot}</div>
-                                <p className="text-xs text-slate-500">No image uploaded</p>
-                              </div>
+                              <UploadCloud className="h-12 w-12" />
                             )}
                           </div>
-                          <div className="mt-4 space-y-3">
-                            <div className="flex flex-wrap gap-2">
-                              <button
-                                type="button"
-                                className="inline-flex items-center gap-2 rounded-2xl bg-slate-950 px-4 py-2 text-xs font-semibold text-white transition hover:bg-slate-800"
-                                onClick={() => uploadInputs.current[slot]?.click()}
-                                disabled={uploadingSlot === slot}
-                              >
-                                <UploadCloud className="h-4 w-4" />
-                                {image ? 'Replace' : 'Upload'}
-                              </button>
-                              <button
-                                type="button"
-                                className="inline-flex items-center gap-2 rounded-2xl bg-rose-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60"
-                                onClick={() => handleDeleteImage(slot)}
-                                disabled={!image || uploadingSlot === slot}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                                Delete
-                              </button>
-                            </div>
-                            <input
-                              ref={(element) => {
-                                uploadInputs.current[slot] = element;
+                          <div className="mt-5 space-y-3">
+                            <button
+                              type="button"
+                              className={`inline-flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-3 text-xs font-semibold transition ${
+                                isFrontSlot && !hasImage
+                                  ? 'bg-slate-950 text-white hover:bg-slate-800'
+                                  : 'bg-slate-200 text-slate-500 cursor-not-allowed'
+                              }`}
+                              onClick={() => {
+                                if (isFrontSlot && uploadInputs.current[slot]) {
+                                  uploadInputs.current[slot]?.click();
+                                }
                               }}
-                              type="file"
-                              accept="image/*"
-                              className="hidden"
-                              onChange={(event) => handleFileChange(slot, event)}
-                            />
+                              disabled={!isFrontSlot || hasImage || isBusy}
+                            >
+                              <UploadCloud className="h-4 w-4" />
+                              Upload
+                            </button>
+                            <button
+                              type="button"
+                              className={`inline-flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-3 text-xs font-semibold transition ${
+                                isFrontSlot && hasImage
+                                  ? 'bg-slate-950 text-white hover:bg-slate-800'
+                                  : 'bg-slate-200 text-slate-500 cursor-not-allowed'
+                              }`}
+                              onClick={() => {
+                                if (isFrontSlot && hasImage && uploadInputs.current[slot]) {
+                                  uploadInputs.current[slot]?.click();
+                                }
+                              }}
+                              disabled={!isFrontSlot || !hasImage || isBusy}
+                            >
+                              <UploadCloud className="h-4 w-4" />
+                              Replace
+                            </button>
+                            <button
+                              type="button"
+                              className={`inline-flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-3 text-xs font-semibold transition ${
+                                isFrontSlot && hasImage
+                                  ? 'bg-rose-600 text-white hover:bg-rose-700'
+                                  : 'bg-rose-100 text-rose-400 cursor-not-allowed'
+                              }`}
+                              onClick={() => {
+                                if (isFrontSlot && hasImage) {
+                                  void handleDeleteImage(slot);
+                                }
+                              }}
+                              disabled={!isFrontSlot || !hasImage || isBusy}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                              Delete
+                            </button>
+                            {isFrontSlot ? (
+                              <input
+                                ref={(element) => {
+                                  uploadInputs.current[slot] = element;
+                                }}
+                                type="file"
+                                accept="image/jpeg,image/png,image/webp"
+                                className="hidden"
+                                onChange={(event) => handleFileChange(slot, event)}
+                              />
+                            ) : null}
                           </div>
                         </div>
                       );
