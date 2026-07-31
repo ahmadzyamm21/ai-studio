@@ -1,7 +1,7 @@
 'use client';
 
 import { ChangeEvent, useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowLeft, Pencil, Sparkles, Trash2, UploadCloud } from 'lucide-react';
+import { ArrowLeft, Check, Pencil, Sparkles, Trash2, UploadCloud } from 'lucide-react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import ReferenceImageCard from '@/components/reference-images/ReferenceImageCard';
@@ -11,17 +11,23 @@ type ProductStatus = 'Active' | 'Draft' | 'Inactive';
 type ReferenceSlot = {
   readonly slot: string;
   readonly title: string;
+  readonly tooltip: string;
   readonly note?: string;
 };
 
 const referenceSlots: readonly ReferenceSlot[] = [
-  { slot: 'Front', title: 'Front' },
-  { slot: 'Front Left', title: 'Front Left 45°' },
-  { slot: 'Left', title: 'Left' },
-  { slot: 'Right', title: 'Right' },
-  { slot: 'Back', title: 'Back' },
-  { slot: 'Front Right', title: 'Front Right 45°' },
-  { slot: 'Top', title: 'Top', note: 'Logo dan detail bagian atas harus terlihat jelas.' },
+  { slot: 'Front', title: 'Front', tooltip: 'Foto lurus dari depan' },
+  { slot: 'Front Left', title: 'Front Left 45°', tooltip: 'Sudut 45° kiri' },
+  { slot: 'Left', title: 'Left', tooltip: '90° sisi kiri' },
+  { slot: 'Right', title: 'Right', tooltip: '90° sisi kanan' },
+  { slot: 'Back', title: 'Back', tooltip: 'Foto lurus belakang' },
+  { slot: 'Front Right', title: 'Front Right 45°', tooltip: 'Sudut 45° kanan' },
+  {
+    slot: 'Top',
+    title: 'Top',
+    tooltip: 'Foto dari atas. Logo harus terlihat jelas.',
+    note: 'Logo dan detail bagian atas harus terlihat jelas.',
+  },
 ];
 
 type Product = {
@@ -386,14 +392,59 @@ export default function ProductDetailPage() {
                     <div className="text-sm text-slate-500">Saved in public/uploads/products/{product.code}</div>
                   </div>
 
+                  <div className="mt-6 rounded-3xl bg-white p-6 shadow-sm">
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                      <div>
+                        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Progress</p>
+                        <p className="mt-2 text-2xl font-semibold text-slate-950">
+                          {Object.values(images).filter(Boolean).length} / {referenceSlots.length} Completed
+                        </p>
+                      </div>
+                      <div className="w-full max-w-xl">
+                        <div className="h-3 overflow-hidden rounded-full bg-slate-200">
+                          <div
+                            className="h-full rounded-full bg-emerald-600"
+                            style={{ width: `${(Object.values(images).filter(Boolean).length / referenceSlots.length) * 100}%` }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                      {referenceSlots.map(({ slot, title }) => {
+                        const hasImage = Boolean(images?.[slot]);
+                        return (
+                          <div
+                            key={slot}
+                            className={`flex items-center gap-3 rounded-2xl border px-4 py-3 text-sm font-semibold ${
+                              hasImage
+                                ? 'border-emerald-200 bg-emerald-50 text-emerald-900'
+                                : 'border-slate-200 bg-slate-100 text-slate-600'
+                            }`}
+                          >
+                            <span
+                              className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-xs font-black ${
+                                hasImage ? 'bg-emerald-700 text-white' : 'bg-slate-300 text-slate-600'
+                              }`}
+                            >
+                              ✓
+                            </span>
+                            <span>{title}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
                   <div className="mt-6 grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                    {referenceSlots.map(({ slot, title, note }) => {
+                    {referenceSlots.map(({ slot, title, tooltip, note }) => {
                       const image = images?.[slot] ?? null;
                       return (
                         <ReferenceImageCard
                           key={slot}
                           slot={slot}
                           title={title}
+                          tooltip={tooltip}
                           imageUrl={image?.path ?? undefined}
                           cacheBuster={cacheBusters[slot]}
                           isUploading={uploadingSlot === slot}
