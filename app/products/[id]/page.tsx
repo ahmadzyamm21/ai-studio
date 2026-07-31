@@ -70,6 +70,32 @@ export default function ProductDetailPage() {
   const [uploadingSlot, setUploadingSlot] = useState<string | null>(null);
   const [deletingSlot, setDeletingSlot] = useState<string | null>(null);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  const [dnaSku, setDnaSku] = useState('');
+  const [dnaBrand, setDnaBrand] = useState('');
+  const [dnaCategory, setDnaCategory] = useState('');
+  const [dnaAgeRange, setDnaAgeRange] = useState('');
+  const [dnaGender, setDnaGender] = useState('');
+  const [dnaMaterial, setDnaMaterial] = useState('');
+  const [dnaFinishing, setDnaFinishing] = useState('');
+  const [dnaVisor, setDnaVisor] = useState('');
+  const [dnaBuckle, setDnaBuckle] = useState('');
+  const [dnaWeight, setDnaWeight] = useState('');
+  const [dnaSni, setDnaSni] = useState('');
+  const [dnaTheme, setDnaTheme] = useState('');
+  const [dnaPrimaryColor, setDnaPrimaryColor] = useState('');
+  const [dnaSecondaryColor, setDnaSecondaryColor] = useState('');
+  const [dnaAccentColor, setDnaAccentColor] = useState('');
+  const [dnaPattern, setDnaPattern] = useState('');
+  const [dnaLogoPosition, setDnaLogoPosition] = useState('');
+  const [dnaBrandLock, setDnaBrandLock] = useState(false);
+  const [dnaShapeLock, setDnaShapeLock] = useState(false);
+  const [dnaMaterialLock, setDnaMaterialLock] = useState(false);
+  const [dnaGraphicLock, setDnaGraphicLock] = useState(false);
+  const [dnaLogoLock, setDnaLogoLock] = useState(false);
+  const [dnaColorLock, setDnaColorLock] = useState(false);
+  const [dnaNotes, setDnaNotes] = useState('');
+
   const uploadInputs = useRef<Record<string, HTMLInputElement | null>>({});
 
   useEffect(() => {
@@ -455,6 +481,142 @@ export default function ProductDetailPage() {
                         />
                       );
                     })}
+                  </div>
+                </div>
+              </div>
+            ) : activeTab === 'Product DNA' ? (
+              <div className="space-y-6">
+                <div className="rounded-3xl border border-slate-200 bg-slate-50 p-6">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <h2 className="text-xl font-semibold text-slate-950">Product DNA</h2>
+                      <p className="mt-2 text-sm text-slate-500">
+                        Form dummy untuk fondasi modul Product DNA.
+                      </p>
+                    </div>
+                    <div className="text-sm text-slate-500">Data belum tersimpan ke database.</div>
+                  </div>
+
+                  <div className="mt-6 grid gap-6">
+                    <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+                      <h3 className="text-lg font-semibold text-slate-950">Identity</h3>
+                      <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                        {[
+                          { label: 'SKU', value: dnaSku, setter: setDnaSku },
+                          { label: 'Brand', value: dnaBrand, setter: setDnaBrand },
+                          { label: 'Category', value: dnaCategory, setter: setDnaCategory },
+                          { label: 'Age Range', value: dnaAgeRange, setter: setDnaAgeRange },
+                          { label: 'Gender', value: dnaGender, setter: setDnaGender },
+                        ].map(({ label, value, setter }) => (
+                          <label key={label} className="space-y-2 text-sm text-slate-700">
+                            <span className="block text-xs uppercase tracking-[0.2em] text-slate-400">{label}</span>
+                            <input
+                              type="text"
+                              value={value}
+                              onChange={(event) => setter(event.target.value)}
+                              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+                            />
+                          </label>
+                        ))}
+                      </div>
+                    </section>
+
+                    <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+                      <h3 className="text-lg font-semibold text-slate-950">Construction</h3>
+                      <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                        {[
+                          { label: 'Material', value: dnaMaterial, setter: setDnaMaterial },
+                          { label: 'Finishing', value: dnaFinishing, setter: setDnaFinishing },
+                          { label: 'Visor', value: dnaVisor, setter: setDnaVisor },
+                          { label: 'Buckle', value: dnaBuckle, setter: setDnaBuckle },
+                          { label: 'Weight', value: dnaWeight, setter: setDnaWeight },
+                          { label: 'SNI', value: dnaSni, setter: setDnaSni },
+                        ].map(({ label, value, setter }) => (
+                          <label key={label} className="space-y-2 text-sm text-slate-700">
+                            <span className="block text-xs uppercase tracking-[0.2em] text-slate-400">{label}</span>
+                            <input
+                              type="text"
+                              value={value}
+                              onChange={(event) => setter(event.target.value)}
+                              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+                            />
+                          </label>
+                        ))}
+                      </div>
+                    </section>
+
+                    <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+                      <h3 className="text-lg font-semibold text-slate-950">Visual Identity</h3>
+                      <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                        {[
+                          { label: 'Theme', value: dnaTheme, setter: setDnaTheme },
+                          { label: 'Primary Color', value: dnaPrimaryColor, setter: setDnaPrimaryColor },
+                          { label: 'Secondary Color', value: dnaSecondaryColor, setter: setDnaSecondaryColor },
+                          { label: 'Accent Color', value: dnaAccentColor, setter: setDnaAccentColor },
+                          { label: 'Pattern', value: dnaPattern, setter: setDnaPattern },
+                          { label: 'Logo Position', value: dnaLogoPosition, setter: setDnaLogoPosition },
+                        ].map(({ label, value, setter }) => (
+                          <label key={label} className="space-y-2 text-sm text-slate-700">
+                            <span className="block text-xs uppercase tracking-[0.2em] text-slate-400">{label}</span>
+                            <input
+                              type="text"
+                              value={value}
+                              onChange={(event) => setter(event.target.value)}
+                              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+                            />
+                          </label>
+                        ))}
+                      </div>
+                    </section>
+
+                    <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+                      <h3 className="text-lg font-semibold text-slate-950">AI Protection</h3>
+                      <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                        {[
+                          { label: 'Brand Lock', checked: dnaBrandLock, setter: setDnaBrandLock },
+                          { label: 'Shape Lock', checked: dnaShapeLock, setter: setDnaShapeLock },
+                          { label: 'Material Lock', checked: dnaMaterialLock, setter: setDnaMaterialLock },
+                          { label: 'Graphic Lock', checked: dnaGraphicLock, setter: setDnaGraphicLock },
+                          { label: 'Logo Lock', checked: dnaLogoLock, setter: setDnaLogoLock },
+                          { label: 'Color Lock', checked: dnaColorLock, setter: setDnaColorLock },
+                        ].map(({ label, checked, setter }) => (
+                          <label key={label} className="inline-flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm">
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={(event) => setter(event.target.checked)}
+                              className="h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-500"
+                            />
+                            {label}
+                          </label>
+                        ))}
+                      </div>
+                    </section>
+
+                    <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+                      <h3 className="text-lg font-semibold text-slate-950">AI Notes</h3>
+                      <div className="mt-5">
+                        <label className="text-sm text-slate-700">
+                          <span className="block text-xs uppercase tracking-[0.2em] text-slate-400">Notes</span>
+                          <textarea
+                            rows={8}
+                            value={dnaNotes}
+                            onChange={(event) => setDnaNotes(event.target.value)}
+                            className="mt-3 w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+                          />
+                        </label>
+                      </div>
+                    </section>
+
+                    <div className="flex justify-end">
+                      <button
+                        type="button"
+                        className="inline-flex items-center justify-center rounded-2xl bg-slate-950 px-6 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+                        onClick={() => setMessage({ type: 'success', text: 'Product DNA tersimpan secara lokal.' })}
+                      >
+                        Save Product DNA
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
