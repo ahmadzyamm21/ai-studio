@@ -8,17 +8,21 @@ import ReferenceImageCard from '@/components/reference-images/ReferenceImageCard
 
 type ProductStatus = 'Active' | 'Draft' | 'Inactive';
 
-const imageSlots = [
-  'Front',
-  'Front Left',
-  'Left',
-  'Right',
-  'Back',
-  'Front Right',
-  'Top',
-] as const;
+type ReferenceSlot = {
+  readonly slot: string;
+  readonly title: string;
+  readonly note?: string;
+};
 
-type ImageSlot = (typeof imageSlots)[number];
+const referenceSlots: readonly ReferenceSlot[] = [
+  { slot: 'Front', title: 'Front' },
+  { slot: 'Front Left', title: 'Front Left 45°' },
+  { slot: 'Left', title: 'Left' },
+  { slot: 'Right', title: 'Right' },
+  { slot: 'Back', title: 'Back' },
+  { slot: 'Front Right', title: 'Front Right 45°' },
+  { slot: 'Top', title: 'Top', note: 'Logo dan detail bagian atas harus terlihat jelas.' },
+];
 
 type Product = {
   id: string;
@@ -55,7 +59,7 @@ export default function ProductDetailPage() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<Tab>('Overview');
   const [error, setError] = useState('');
-  const [images, setImages] = useState<Record<string, { id: string; slot: string; filename: string; path: string }> | null>(null);
+  const [images, setImages] = useState<Record<string, { id: string; slot: string; filename: string; path: string } | null>>({});
   const [cacheBusters, setCacheBusters] = useState<Record<string, string>>({});
   const [uploadingSlot, setUploadingSlot] = useState<string | null>(null);
   const [deletingSlot, setDeletingSlot] = useState<string | null>(null);
@@ -177,7 +181,7 @@ export default function ProductDetailPage() {
 
   async function handleDeleteImage(slot: string) {
     if (!id) return;
-    const confirmed = window.confirm('Yakin ingin menghapus gambar Front?');
+    const confirmed = window.confirm(`Yakin ingin menghapus gambar ${slot}?`);
     if (!confirmed) return;
 
     setMessage(null);
@@ -382,61 +386,22 @@ export default function ProductDetailPage() {
                     <div className="text-sm text-slate-500">Saved in public/uploads/products/{product.code}</div>
                   </div>
 
-                  <div className="mt-6 grid gap-6 grid-cols-1 sm:grid-cols-2 xl:grid-cols-4">
-                    {imageSlots.map((slot) => {
-                      const image = images?.[slot];
-                      const isFrontSlot = slot === 'Front';
-                      const hasImage = Boolean(image);
-                      const isBusy = uploadingSlot === slot || deletingSlot === slot;
-
-                      return isFrontSlot ? (
+                  <div className="mt-6 grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                    {referenceSlots.map(({ slot, title, note }) => {
+                      const image = images?.[slot] ?? null;
+                      return (
                         <ReferenceImageCard
                           key={slot}
                           slot={slot}
-                          title={slot}
-                          imageUrl={image?.path}
+                          title={title}
+                          imageUrl={image?.path ?? undefined}
                           cacheBuster={cacheBusters[slot]}
                           isUploading={uploadingSlot === slot}
                           isDeleting={deletingSlot === slot}
                           onSelectFile={(event) => handleFileChange(slot, event)}
                           onDelete={() => void handleDeleteImage(slot)}
+                          note={note}
                         />
-                      ) : (
-                        <div key={slot} className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-                          <div className="flex items-center justify-between gap-2">
-                            <h3 className="text-sm font-semibold text-slate-900">{slot}</h3>
-                            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">250x250</span>
-                          </div>
-                          <div className="mt-4 flex h-[250px] items-center justify-center overflow-hidden rounded-3xl bg-slate-100 text-slate-400">
-                            <UploadCloud className="h-12 w-12" />
-                          </div>
-                          <div className="mt-5 space-y-3">
-                            <button
-                              type="button"
-                              className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-200 px-4 py-3 text-xs font-semibold text-slate-500"
-                              disabled
-                            >
-                              <UploadCloud className="h-4 w-4" />
-                              Upload
-                            </button>
-                            <button
-                              type="button"
-                              className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-200 px-4 py-3 text-xs font-semibold text-slate-500"
-                              disabled
-                            >
-                              <UploadCloud className="h-4 w-4" />
-                              Replace
-                            </button>
-                            <button
-                              type="button"
-                              className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-rose-100 px-4 py-3 text-xs font-semibold text-rose-400"
-                              disabled
-                            >
-                              <Trash2 className="h-4 w-4" />
-                              Delete
-                            </button>
-                          </div>
-                        </div>
                       );
                     })}
                   </div>
