@@ -81,20 +81,23 @@ export default function ProductDetailPage() {
   const [dnaVisor, setDnaVisor] = useState('');
   const [dnaBuckle, setDnaBuckle] = useState('');
   const [dnaWeight, setDnaWeight] = useState('');
-  const [dnaSni, setDnaSni] = useState('');
+  const [dnaSni, setDnaSni] = useState(false);
   const [dnaTheme, setDnaTheme] = useState('');
   const [dnaPrimaryColor, setDnaPrimaryColor] = useState('');
   const [dnaSecondaryColor, setDnaSecondaryColor] = useState('');
   const [dnaAccentColor, setDnaAccentColor] = useState('');
   const [dnaPattern, setDnaPattern] = useState('');
   const [dnaLogoPosition, setDnaLogoPosition] = useState('');
-  const [dnaBrandLock, setDnaBrandLock] = useState(false);
-  const [dnaShapeLock, setDnaShapeLock] = useState(false);
-  const [dnaMaterialLock, setDnaMaterialLock] = useState(false);
-  const [dnaGraphicLock, setDnaGraphicLock] = useState(false);
-  const [dnaLogoLock, setDnaLogoLock] = useState(false);
-  const [dnaColorLock, setDnaColorLock] = useState(false);
+  const [dnaBrandLock, setDnaBrandLock] = useState(true);
+  const [dnaShapeLock, setDnaShapeLock] = useState(true);
+  const [dnaMaterialLock, setDnaMaterialLock] = useState(true);
+  const [dnaGraphicLock, setDnaGraphicLock] = useState(true);
+  const [dnaLogoLock, setDnaLogoLock] = useState(true);
+  const [dnaColorLock, setDnaColorLock] = useState(true);
   const [dnaNotes, setDnaNotes] = useState('');
+
+  const [dnaLoading, setDnaLoading] = useState(false);
+  const [savingDns, setSavingDna] = useState(false);
 
   const uploadInputs = useRef<Record<string, HTMLInputElement | null>>({});
 
@@ -131,6 +134,57 @@ export default function ProductDetailPage() {
 
     void fetchProduct();
   }, [id]);
+
+  useEffect(() => {
+    if (!id || activeTab !== 'Product DNA') {
+      return;
+    }
+
+    async function fetchDna() {
+      setDnaLoading(true);
+      setMessage(null);
+      try {
+        const response = await fetch(`/api/products/${id}/dna`);
+        if (!response.ok) {
+          throw new Error('Gagal memuat Product DNA.');
+        }
+        const data = await response.json();
+        const dna = data.dna;
+        if (dna) {
+          setDnaSku(dna.sku ?? '');
+          setDnaBrand(dna.brand ?? '');
+          setDnaCategory(dna.category ?? '');
+          setDnaAgeRange(dna.ageRange ?? '');
+          setDnaGender(dna.gender ?? '');
+          setDnaMaterial(dna.material ?? '');
+          setDnaFinishing(dna.finishing ?? '');
+          setDnaVisor(dna.visor ?? '');
+          setDnaBuckle(dna.buckle ?? '');
+          setDnaWeight(dna.weight ?? '');
+          setDnaSni(Boolean(dna.sni));
+          setDnaTheme(dna.theme ?? '');
+          setDnaPrimaryColor(dna.primaryColor ?? '');
+          setDnaSecondaryColor(dna.secondaryColor ?? '');
+          setDnaAccentColor(dna.accentColor ?? '');
+          setDnaPattern(dna.pattern ?? '');
+          setDnaLogoPosition(dna.logoPosition ?? '');
+          setDnaBrandLock(dna.brandLock ?? true);
+          setDnaShapeLock(dna.shapeLock ?? true);
+          setDnaMaterialLock(dna.materialLock ?? true);
+          setDnaGraphicLock(dna.graphicLock ?? true);
+          setDnaLogoLock(dna.logoLock ?? true);
+          setDnaColorLock(dna.colorLock ?? true);
+          setDnaNotes(dna.notes ?? '');
+        }
+      } catch (err) {
+        setMessage({ type: 'error', text: (err as Error).message });
+      } finally {
+        setDnaLoading(false);
+      }
+    }
+
+    void fetchDna();
+  }, [id, activeTab]);
 
   async function fetchImages(productId: string) {
     const response = await fetch(`/api/products/${productId}/images`);
@@ -499,37 +553,132 @@ export default function ProductDetailPage() {
                   const percentage = Math.round((filledCount / totalFields) * 100);
                   const isComplete = percentage >= 80;
 
-                  const handleResetDna = () => {
-                    setDnaSku('');
-                    setDnaBrand('');
-                    setDnaCategory('');
-                    setDnaAgeRange('');
-                    setDnaGender('');
-                    setDnaMaterial('');
-                    setDnaFinishing('');
-                    setDnaVisor('');
-                    setDnaBuckle('');
-                    setDnaWeight('');
-                    setDnaSni('');
-                    setDnaTheme('');
-                    setDnaPrimaryColor('');
-                    setDnaSecondaryColor('');
-                    setDnaAccentColor('');
-                    setDnaPattern('');
-                    setDnaLogoPosition('');
-                    setDnaBrandLock(false);
-                    setDnaShapeLock(false);
-                    setDnaMaterialLock(false);
-                    setDnaGraphicLock(false);
-                    setDnaLogoLock(false);
-                    setDnaColorLock(false);
-                    setDnaNotes('');
-                    setMessage({ type: 'success', text: 'Product DNA berhasil direset.' });
+                  const handleResetDna = async () => {
+                    setDnaLoading(true);
+                    setMessage(null);
+                    try {
+                      const response = await fetch(`/api/products/${id}/dna`);
+                      if (!response.ok) {
+                        throw new Error('Gagal mereset Product DNA.');
+                      }
+                      const data = await response.json();
+                      const dna = data.dna;
+                      if (dna) {
+                        setDnaSku(dna.sku ?? '');
+                        setDnaBrand(dna.brand ?? '');
+                        setDnaCategory(dna.category ?? '');
+                        setDnaAgeRange(dna.ageRange ?? '');
+                        setDnaGender(dna.gender ?? '');
+                        setDnaMaterial(dna.material ?? '');
+                        setDnaFinishing(dna.finishing ?? '');
+                        setDnaVisor(dna.visor ?? '');
+                        setDnaBuckle(dna.buckle ?? '');
+                        setDnaWeight(dna.weight ?? '');
+                        setDnaSni(Boolean(dna.sni));
+                        setDnaTheme(dna.theme ?? '');
+                        setDnaPrimaryColor(dna.primaryColor ?? '');
+                        setDnaSecondaryColor(dna.secondaryColor ?? '');
+                        setDnaAccentColor(dna.accentColor ?? '');
+                        setDnaPattern(dna.pattern ?? '');
+                        setDnaLogoPosition(dna.logoPosition ?? '');
+                        setDnaBrandLock(dna.brandLock ?? true);
+                        setDnaShapeLock(dna.shapeLock ?? true);
+                        setDnaMaterialLock(dna.materialLock ?? true);
+                        setDnaGraphicLock(dna.graphicLock ?? true);
+                        setDnaLogoLock(dna.logoLock ?? true);
+                        setDnaColorLock(dna.colorLock ?? true);
+                        setDnaNotes(dna.notes ?? '');
+                      } else {
+                        setDnaSku('');
+                        setDnaBrand('');
+                        setDnaCategory('');
+                        setDnaAgeRange('');
+                        setDnaGender('');
+                        setDnaMaterial('');
+                        setDnaFinishing('');
+                        setDnaVisor('');
+                        setDnaBuckle('');
+                        setDnaWeight('');
+                        setDnaSni(false);
+                        setDnaTheme('');
+                        setDnaPrimaryColor('');
+                        setDnaSecondaryColor('');
+                        setDnaAccentColor('');
+                        setDnaPattern('');
+                        setDnaLogoPosition('');
+                        setDnaBrandLock(true);
+                        setDnaShapeLock(true);
+                        setDnaMaterialLock(true);
+                        setDnaGraphicLock(true);
+                        setDnaLogoLock(true);
+                        setDnaColorLock(true);
+                        setDnaNotes('');
+                      }
+                      setMessage({ type: 'success', text: 'Product DNA berhasil direset ke data tersimpan.' });
+                    } catch (err) {
+                      setMessage({ type: 'error', text: (err as Error).message });
+                    } finally {
+                      setDnaLoading(false);
+                    }
                   };
 
-                  const handleSaveDna = () => {
-                    setMessage({ type: 'success', text: 'Product DNA berhasil disimpan (State lokal).' });
+                  const handleSaveDna = async () => {
+                    setSavingDna(true);
+                    setMessage(null);
+                    try {
+                      const payload = {
+                        sku: dnaSku,
+                        brand: dnaBrand,
+                        category: dnaCategory,
+                        ageRange: dnaAgeRange,
+                        gender: dnaGender,
+                        material: dnaMaterial,
+                        finishing: dnaFinishing,
+                        visor: dnaVisor,
+                        buckle: dnaBuckle,
+                        weight: dnaWeight,
+                        sni: dnaSni,
+                        theme: dnaTheme,
+                        primaryColor: dnaPrimaryColor,
+                        secondaryColor: dnaSecondaryColor,
+                        accentColor: dnaAccentColor,
+                        pattern: dnaPattern,
+                        logoPosition: dnaLogoPosition,
+                        brandLock: dnaBrandLock,
+                        shapeLock: dnaShapeLock,
+                        materialLock: dnaMaterialLock,
+                        graphicLock: dnaGraphicLock,
+                        logoLock: dnaLogoLock,
+                        colorLock: dnaColorLock,
+                        notes: dnaNotes,
+                      };
+
+                      const response = await fetch(`/api/products/${id}/dna`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload),
+                      });
+
+                      const data = await response.json();
+                      if (!response.ok) {
+                        throw new Error(data?.error ?? 'Gagal menyimpan Product DNA.');
+                      }
+
+                      setMessage({ type: 'success', text: 'Product DNA berhasil disimpan ke database.' });
+                    } catch (err) {
+                      setMessage({ type: 'error', text: (err as Error).message });
+                    } finally {
+                      setSavingDna(false);
+                    }
                   };
+
+                  if (dnaLoading) {
+                    return (
+                      <div className="rounded-3xl border border-slate-200 bg-white p-10 text-center shadow-sm">
+                        <p className="text-sm text-slate-500">Memuat Product DNA dari database...</p>
+                      </div>
+                    );
+                  }
 
                   return (
                     <div className="rounded-3xl border border-slate-200 bg-slate-50 p-6 sm:p-8">
@@ -613,7 +762,6 @@ export default function ProductDetailPage() {
                               { label: 'Visor', value: dnaVisor, setter: setDnaVisor, required: false },
                               { label: 'Buckle', value: dnaBuckle, setter: setDnaBuckle, required: false },
                               { label: 'Weight', value: dnaWeight, setter: setDnaWeight, required: false },
-                              { label: 'SNI', value: dnaSni, setter: setDnaSni, required: false },
                             ].map(({ label, value, setter, required }) => (
                               <label key={label} className="space-y-2 text-sm text-slate-700">
                                 <span className="block text-xs font-semibold uppercase tracking-[0.15em] text-slate-600">
@@ -628,6 +776,15 @@ export default function ProductDetailPage() {
                                 />
                               </label>
                             ))}
+                            <label className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50/50 p-4 transition cursor-pointer hover:bg-slate-100/50">
+                              <span className="text-sm font-semibold text-slate-800">SNI Certified</span>
+                              <input
+                                type="checkbox"
+                                checked={dnaSni}
+                                onChange={(event) => setDnaSni(event.target.checked)}
+                                className="h-5 w-5 rounded border-slate-300 text-violet-600 focus:ring-violet-500"
+                              />
+                            </label>
                           </div>
                         </section>
 
