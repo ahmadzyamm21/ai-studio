@@ -1,7 +1,7 @@
 'use client';
 
 import { ChangeEvent, useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowLeft, Check, Pencil, Sparkles, Trash2, UploadCloud } from 'lucide-react';
+import { ArrowLeft, Check, Lock, Palette, Pencil, ShieldCheck, Sparkles, Trash2, UploadCloud, FileText, Box, Layers, RotateCcw } from 'lucide-react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import ReferenceImageCard from '@/components/reference-images/ReferenceImageCard';
@@ -486,139 +486,264 @@ export default function ProductDetailPage() {
               </div>
             ) : activeTab === 'Product DNA' ? (
               <div className="space-y-6">
-                <div className="rounded-3xl border border-slate-200 bg-slate-50 p-6">
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                      <h2 className="text-xl font-semibold text-slate-950">Product DNA</h2>
-                      <p className="mt-2 text-sm text-slate-500">
-                        Form dummy untuk fondasi modul Product DNA.
-                      </p>
+                {(() => {
+                  const dnaFields = [
+                    dnaSku, dnaBrand, dnaCategory, dnaAgeRange, dnaGender,
+                    dnaMaterial, dnaFinishing, dnaVisor, dnaBuckle, dnaWeight, dnaSni,
+                    dnaTheme, dnaPrimaryColor, dnaSecondaryColor, dnaAccentColor, dnaPattern, dnaLogoPosition,
+                    dnaBrandLock, dnaShapeLock, dnaMaterialLock, dnaGraphicLock, dnaLogoLock, dnaColorLock,
+                    dnaNotes
+                  ];
+                  const filledCount = dnaFields.filter((val) => typeof val === 'boolean' ? val : Boolean(val && String(val).trim())).length;
+                  const totalFields = dnaFields.length;
+                  const percentage = Math.round((filledCount / totalFields) * 100);
+                  const isComplete = percentage >= 80;
+
+                  const handleResetDna = () => {
+                    setDnaSku('');
+                    setDnaBrand('');
+                    setDnaCategory('');
+                    setDnaAgeRange('');
+                    setDnaGender('');
+                    setDnaMaterial('');
+                    setDnaFinishing('');
+                    setDnaVisor('');
+                    setDnaBuckle('');
+                    setDnaWeight('');
+                    setDnaSni('');
+                    setDnaTheme('');
+                    setDnaPrimaryColor('');
+                    setDnaSecondaryColor('');
+                    setDnaAccentColor('');
+                    setDnaPattern('');
+                    setDnaLogoPosition('');
+                    setDnaBrandLock(false);
+                    setDnaShapeLock(false);
+                    setDnaMaterialLock(false);
+                    setDnaGraphicLock(false);
+                    setDnaLogoLock(false);
+                    setDnaColorLock(false);
+                    setDnaNotes('');
+                    setMessage({ type: 'success', text: 'Product DNA berhasil direset.' });
+                  };
+
+                  const handleSaveDna = () => {
+                    setMessage({ type: 'success', text: 'Product DNA berhasil disimpan (State lokal).' });
+                  };
+
+                  return (
+                    <div className="rounded-3xl border border-slate-200 bg-slate-50 p-6 sm:p-8">
+                      <div className="flex flex-col gap-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                          <div className="flex flex-wrap items-center gap-3">
+                            <h2 className="text-2xl font-semibold text-slate-950">{product.name}</h2>
+                            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">{product.code}</span>
+                            <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${isComplete ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}`}>
+                              <span className={`h-2 w-2 rounded-full ${isComplete ? 'bg-emerald-600' : 'bg-amber-600'}`} />
+                              {isComplete ? 'Complete' : 'Incomplete'}
+                            </span>
+                          </div>
+                          <p className="mt-2 text-sm text-slate-500">
+                            Kelola profil spesifikasi genetik produk untuk presisi AI Generator dan Prompt Factory.
+                          </p>
+                        </div>
+                        <div className="flex flex-col items-start gap-2 sm:items-end">
+                          <span className="text-sm font-bold text-slate-900">{percentage}% Completed</span>
+                          <div className="w-48 overflow-hidden rounded-full bg-slate-100 sm:w-56">
+                            <div className="h-2.5 rounded-full bg-violet-600 transition-all duration-300" style={{ width: `${percentage}%` }} />
+                          </div>
+                        </div>
+                      </div>
+
+                      {message && (
+                        <div className={`mt-6 rounded-2xl p-4 text-sm font-medium ${message.type === 'success' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-rose-50 text-rose-800 border border-rose-200'}`}>
+                          {message.text}
+                        </div>
+                      )}
+
+                      <div className="mt-6 grid gap-6">
+                        <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition hover:shadow-md">
+                          <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
+                            <div className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-violet-50 text-violet-700">
+                              <Box className="h-5 w-5" />
+                            </div>
+                            <div>
+                              <h3 className="text-lg font-semibold text-slate-950">Identity</h3>
+                              <p className="text-xs text-slate-500">Informasi dasar pengenal produk dan target demografi</p>
+                            </div>
+                          </div>
+                          <div className="mt-5 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+                            {[
+                              { label: 'SKU', value: dnaSku, setter: setDnaSku, required: true },
+                              { label: 'Brand', value: dnaBrand, setter: setDnaBrand, required: true },
+                              { label: 'Category', value: dnaCategory, setter: setDnaCategory, required: true },
+                              { label: 'Age Range', value: dnaAgeRange, setter: setDnaAgeRange, required: false },
+                              { label: 'Gender', value: dnaGender, setter: setDnaGender, required: false },
+                            ].map(({ label, value, setter, required }) => (
+                              <label key={label} className="space-y-2 text-sm text-slate-700">
+                                <span className="block text-xs font-semibold uppercase tracking-[0.15em] text-slate-600">
+                                  {label} {required && <span className="text-rose-500">*</span>}
+                                </span>
+                                <input
+                                  type="text"
+                                  value={value}
+                                  onChange={(event) => setter(event.target.value)}
+                                  placeholder={`Masukkan ${label.toLowerCase()}...`}
+                                  className="w-full rounded-2xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-violet-600 focus:bg-white focus:ring-4 focus:ring-violet-100"
+                                />
+                              </label>
+                            ))}
+                          </div>
+                        </section>
+
+                        <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition hover:shadow-md">
+                          <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
+                            <div className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-sky-50 text-sky-700">
+                              <Layers className="h-5 w-5" />
+                            </div>
+                            <div>
+                              <h3 className="text-lg font-semibold text-slate-950">Construction</h3>
+                              <p className="text-xs text-slate-500">Spesifikasi material fisik, komponen, dan standar keamanan</p>
+                            </div>
+                          </div>
+                          <div className="mt-5 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+                            {[
+                              { label: 'Material', value: dnaMaterial, setter: setDnaMaterial, required: true },
+                              { label: 'Finishing', value: dnaFinishing, setter: setDnaFinishing, required: false },
+                              { label: 'Visor', value: dnaVisor, setter: setDnaVisor, required: false },
+                              { label: 'Buckle', value: dnaBuckle, setter: setDnaBuckle, required: false },
+                              { label: 'Weight', value: dnaWeight, setter: setDnaWeight, required: false },
+                              { label: 'SNI', value: dnaSni, setter: setDnaSni, required: false },
+                            ].map(({ label, value, setter, required }) => (
+                              <label key={label} className="space-y-2 text-sm text-slate-700">
+                                <span className="block text-xs font-semibold uppercase tracking-[0.15em] text-slate-600">
+                                  {label} {required && <span className="text-rose-500">*</span>}
+                                </span>
+                                <input
+                                  type="text"
+                                  value={value}
+                                  onChange={(event) => setter(event.target.value)}
+                                  placeholder={`Masukkan ${label.toLowerCase()}...`}
+                                  className="w-full rounded-2xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-violet-600 focus:bg-white focus:ring-4 focus:ring-violet-100"
+                                />
+                              </label>
+                            ))}
+                          </div>
+                        </section>
+
+                        <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition hover:shadow-md">
+                          <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
+                            <div className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-amber-50 text-amber-700">
+                              <Palette className="h-5 w-5" />
+                            </div>
+                            <div>
+                              <h3 className="text-lg font-semibold text-slate-950">Visual Identity</h3>
+                              <p className="text-xs text-slate-500">Skema warna, tema grafis, dan posisi logo</p>
+                            </div>
+                          </div>
+                          <div className="mt-5 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+                            {[
+                              { label: 'Theme', value: dnaTheme, setter: setDnaTheme, required: true },
+                              { label: 'Primary Color', value: dnaPrimaryColor, setter: setDnaPrimaryColor, required: true },
+                              { label: 'Secondary Color', value: dnaSecondaryColor, setter: setDnaSecondaryColor, required: false },
+                              { label: 'Accent Color', value: dnaAccentColor, setter: setDnaAccentColor, required: false },
+                              { label: 'Pattern', value: dnaPattern, setter: setDnaPattern, required: false },
+                              { label: 'Logo Position', value: dnaLogoPosition, setter: setDnaLogoPosition, required: false },
+                            ].map(({ label, value, setter, required }) => (
+                              <label key={label} className="space-y-2 text-sm text-slate-700">
+                                <span className="block text-xs font-semibold uppercase tracking-[0.15em] text-slate-600">
+                                  {label} {required && <span className="text-rose-500">*</span>}
+                                </span>
+                                <input
+                                  type="text"
+                                  value={value}
+                                  onChange={(event) => setter(event.target.value)}
+                                  placeholder={`Masukkan ${label.toLowerCase()}...`}
+                                  className="w-full rounded-2xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-violet-600 focus:bg-white focus:ring-4 focus:ring-violet-100"
+                                />
+                              </label>
+                            ))}
+                          </div>
+                        </section>
+
+                        <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition hover:shadow-md">
+                          <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
+                            <div className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700">
+                              <ShieldCheck className="h-5 w-5" />
+                            </div>
+                            <div>
+                              <h3 className="text-lg font-semibold text-slate-950">AI Protection</h3>
+                              <p className="text-xs text-slate-500">Kunci komponen agar konsisten saat dirender AI</p>
+                            </div>
+                          </div>
+                          <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                            {[
+                              { label: 'Brand Lock', checked: dnaBrandLock, setter: setDnaBrandLock },
+                              { label: 'Shape Lock', checked: dnaShapeLock, setter: setDnaShapeLock },
+                              { label: 'Material Lock', checked: dnaMaterialLock, setter: setDnaMaterialLock },
+                              { label: 'Graphic Lock', checked: dnaGraphicLock, setter: setDnaGraphicLock },
+                              { label: 'Logo Lock', checked: dnaLogoLock, setter: setDnaLogoLock },
+                              { label: 'Color Lock', checked: dnaColorLock, setter: setDnaColorLock },
+                            ].map(({ label, checked, setter }) => (
+                              <label key={label} className={`flex items-center justify-between rounded-2xl border p-4 transition cursor-pointer ${checked ? 'border-violet-300 bg-violet-50/50 shadow-sm' : 'border-slate-200 bg-slate-50/50 hover:bg-slate-100/50'}`}>
+                                <span className="text-sm font-semibold text-slate-800">{label}</span>
+                                <input
+                                  type="checkbox"
+                                  checked={checked}
+                                  onChange={(event) => setter(event.target.checked)}
+                                  className="h-5 w-5 rounded border-slate-300 text-violet-600 focus:ring-violet-500"
+                                />
+                              </label>
+                            ))}
+                          </div>
+                        </section>
+
+                        <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition hover:shadow-md">
+                          <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
+                            <div className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-700">
+                              <FileText className="h-5 w-5" />
+                            </div>
+                            <div>
+                              <h3 className="text-lg font-semibold text-slate-950">AI Notes</h3>
+                              <p className="text-xs text-slate-500">Catatan khusus tambahan untuk engine generator AI</p>
+                            </div>
+                          </div>
+                          <div className="mt-5">
+                            <label className="text-sm text-slate-700">
+                              <span className="block text-xs font-semibold uppercase tracking-[0.15em] text-slate-600">Special Generation Notes</span>
+                              <textarea
+                                rows={6}
+                                value={dnaNotes}
+                                onChange={(event) => setDnaNotes(event.target.value)}
+                                placeholder="Tuliskan catatan khusus, instruksi prompt, atau batasan rendering..."
+                                className="mt-3 w-full rounded-2xl border border-slate-200 bg-slate-50/50 p-4 text-sm text-slate-900 outline-none transition focus:border-violet-600 focus:bg-white focus:ring-4 focus:ring-violet-100"
+                              />
+                            </label>
+                          </div>
+                        </section>
+
+                        <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-end">
+                          <button
+                            type="button"
+                            onClick={handleResetDna}
+                            className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                          >
+                            <RotateCcw className="h-4 w-4" />
+                            Reset
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleSaveDna}
+                            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-950 px-6 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 shadow-lg shadow-slate-950/10"
+                          >
+                            <Check className="h-4 w-4" />
+                            Save Product DNA
+                          </button>
+                        </div>
+                      </div>
                     </div>
-                    <div className="text-sm text-slate-500">Data belum tersimpan ke database.</div>
-                  </div>
-
-                  <div className="mt-6 grid gap-6">
-                    <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-                      <h3 className="text-lg font-semibold text-slate-950">Identity</h3>
-                      <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                        {[
-                          { label: 'SKU', value: dnaSku, setter: setDnaSku },
-                          { label: 'Brand', value: dnaBrand, setter: setDnaBrand },
-                          { label: 'Category', value: dnaCategory, setter: setDnaCategory },
-                          { label: 'Age Range', value: dnaAgeRange, setter: setDnaAgeRange },
-                          { label: 'Gender', value: dnaGender, setter: setDnaGender },
-                        ].map(({ label, value, setter }) => (
-                          <label key={label} className="space-y-2 text-sm text-slate-700">
-                            <span className="block text-xs uppercase tracking-[0.2em] text-slate-400">{label}</span>
-                            <input
-                              type="text"
-                              value={value}
-                              onChange={(event) => setter(event.target.value)}
-                              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
-                            />
-                          </label>
-                        ))}
-                      </div>
-                    </section>
-
-                    <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-                      <h3 className="text-lg font-semibold text-slate-950">Construction</h3>
-                      <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                        {[
-                          { label: 'Material', value: dnaMaterial, setter: setDnaMaterial },
-                          { label: 'Finishing', value: dnaFinishing, setter: setDnaFinishing },
-                          { label: 'Visor', value: dnaVisor, setter: setDnaVisor },
-                          { label: 'Buckle', value: dnaBuckle, setter: setDnaBuckle },
-                          { label: 'Weight', value: dnaWeight, setter: setDnaWeight },
-                          { label: 'SNI', value: dnaSni, setter: setDnaSni },
-                        ].map(({ label, value, setter }) => (
-                          <label key={label} className="space-y-2 text-sm text-slate-700">
-                            <span className="block text-xs uppercase tracking-[0.2em] text-slate-400">{label}</span>
-                            <input
-                              type="text"
-                              value={value}
-                              onChange={(event) => setter(event.target.value)}
-                              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
-                            />
-                          </label>
-                        ))}
-                      </div>
-                    </section>
-
-                    <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-                      <h3 className="text-lg font-semibold text-slate-950">Visual Identity</h3>
-                      <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                        {[
-                          { label: 'Theme', value: dnaTheme, setter: setDnaTheme },
-                          { label: 'Primary Color', value: dnaPrimaryColor, setter: setDnaPrimaryColor },
-                          { label: 'Secondary Color', value: dnaSecondaryColor, setter: setDnaSecondaryColor },
-                          { label: 'Accent Color', value: dnaAccentColor, setter: setDnaAccentColor },
-                          { label: 'Pattern', value: dnaPattern, setter: setDnaPattern },
-                          { label: 'Logo Position', value: dnaLogoPosition, setter: setDnaLogoPosition },
-                        ].map(({ label, value, setter }) => (
-                          <label key={label} className="space-y-2 text-sm text-slate-700">
-                            <span className="block text-xs uppercase tracking-[0.2em] text-slate-400">{label}</span>
-                            <input
-                              type="text"
-                              value={value}
-                              onChange={(event) => setter(event.target.value)}
-                              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
-                            />
-                          </label>
-                        ))}
-                      </div>
-                    </section>
-
-                    <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-                      <h3 className="text-lg font-semibold text-slate-950">AI Protection</h3>
-                      <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                        {[
-                          { label: 'Brand Lock', checked: dnaBrandLock, setter: setDnaBrandLock },
-                          { label: 'Shape Lock', checked: dnaShapeLock, setter: setDnaShapeLock },
-                          { label: 'Material Lock', checked: dnaMaterialLock, setter: setDnaMaterialLock },
-                          { label: 'Graphic Lock', checked: dnaGraphicLock, setter: setDnaGraphicLock },
-                          { label: 'Logo Lock', checked: dnaLogoLock, setter: setDnaLogoLock },
-                          { label: 'Color Lock', checked: dnaColorLock, setter: setDnaColorLock },
-                        ].map(({ label, checked, setter }) => (
-                          <label key={label} className="inline-flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm">
-                            <input
-                              type="checkbox"
-                              checked={checked}
-                              onChange={(event) => setter(event.target.checked)}
-                              className="h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-500"
-                            />
-                            {label}
-                          </label>
-                        ))}
-                      </div>
-                    </section>
-
-                    <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-                      <h3 className="text-lg font-semibold text-slate-950">AI Notes</h3>
-                      <div className="mt-5">
-                        <label className="text-sm text-slate-700">
-                          <span className="block text-xs uppercase tracking-[0.2em] text-slate-400">Notes</span>
-                          <textarea
-                            rows={8}
-                            value={dnaNotes}
-                            onChange={(event) => setDnaNotes(event.target.value)}
-                            className="mt-3 w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
-                          />
-                        </label>
-                      </div>
-                    </section>
-
-                    <div className="flex justify-end">
-                      <button
-                        type="button"
-                        className="inline-flex items-center justify-center rounded-2xl bg-slate-950 px-6 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
-                        onClick={() => setMessage({ type: 'success', text: 'Product DNA tersimpan secara lokal.' })}
-                      >
-                        Save Product DNA
-                      </button>
-                    </div>
-                  </div>
-                </div>
+                  );
+                })()}
               </div>
             ) : (
               <div className="rounded-3xl border border-dashed border-slate-200 bg-slate-50 p-10 text-center">
