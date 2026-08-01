@@ -98,6 +98,16 @@ export default function ProductDetailPage() {
 
   const [dnaLoading, setDnaLoading] = useState(false);
   const [savingDns, setSavingDna] = useState(false);
+  const [dnaFetchedOnce, setDnaFetchedOnce] = useState(false);
+
+  // Prompt Factory state
+  const [promptStyle, setPromptStyle] = useState('Studio Minimalist');
+  const [promptCamera, setPromptCamera] = useState('Eye-level 50mm portrait');
+  const [promptLighting, setPromptLighting] = useState('Soft Studio Softbox');
+  const [promptPlatform, setPromptPlatform] = useState('Google Imagen');
+  const [promptCopyStatus, setPromptCopyStatus] = useState<string | null>(null);
+  const [promptCopyError, setPromptCopyError] = useState<string | null>(null);
+  const [regenerateVersion, setRegenerateVersion] = useState(0);
 
   const uploadInputs = useRef<Record<string, HTMLInputElement | null>>({});
 
@@ -136,7 +146,11 @@ export default function ProductDetailPage() {
   }, [id]);
 
   useEffect(() => {
-    if (!id || activeTab !== 'Product DNA') {
+    if (!id || (activeTab !== 'Product DNA' && activeTab !== 'Prompt Factory')) {
+      return;
+    }
+
+    if (dnaFetchedOnce) {
       return;
     }
 
@@ -176,6 +190,7 @@ export default function ProductDetailPage() {
           setDnaColorLock(dna.colorLock ?? true);
           setDnaNotes(dna.notes ?? '');
         }
+        setDnaFetchedOnce(true);
       } catch (err) {
         setMessage({ type: 'error', text: (err as Error).message });
       } finally {
@@ -184,7 +199,7 @@ export default function ProductDetailPage() {
     }
 
     void fetchDna();
-  }, [id, activeTab]);
+  }, [id, activeTab, dnaFetchedOnce]);
 
   async function fetchImages(productId: string) {
     const response = await fetch(`/api/products/${productId}/images`);
@@ -553,6 +568,66 @@ export default function ProductDetailPage() {
                   const percentage = Math.round((filledCount / totalFields) * 100);
                   const isComplete = percentage >= 80;
 
+                  // AI Readiness Score Calculation (Total: 100 points)
+                  // A. Identity (20 pts): sku, brand, category, ageRange, gender (4 pts each)
+                  const identityScore = [dnaSku, dnaBrand, dnaCategory, dnaAgeRange, dnaGender].reduce(
+                    (acc, val) => acc + (val.trim() ? 4 : 0),
+                    0
+                  );
+
+                  // B. Construction (20 pts): material (4), finishing (3), visor (3), buckle (3), weight (3), sni (4)
+                  const constructionScore =
+                    (dnaMaterial.trim() ? 4 : 0) +
+                    (dnaFinishing.trim() ? 3 : 0) +
+                    (dnaVisor.trim() ? 3 : 0) +
+                    (dnaBuckle.trim() ? 3 : 0) +
+                    (dnaWeight.trim() ? 3 : 0) +
+                    (dnaSni ? 4 : 0);
+
+                  // C. Visual Identity (25 pts): theme (5), primaryColor (5), secondaryColor (4), accentColor (3), pattern (4), logoPosition (4)
+                  const visualScore =
+                    (dnaTheme.trim() ? 5 : 0) +
+                    (dnaPrimaryColor.trim() ? 5 : 0) +
+                    (dnaSecondaryColor.trim() ? 4 : 0) +
+                    (dnaAccentColor.trim() ? 3 : 0) +
+                    (dnaPattern.trim() ? 4 : 0) +
+                    (dnaLogoPosition.trim() ? 4 : 0);
+
+                  // D. AI Protection (10 pts): 6 locks (~1.67 pts each, sum to 10)
+                  const locks = [dnaBrandLock, dnaShapeLock, dnaMaterialLock, dnaGraphicLock, dnaLogoLock, dnaColorLock];
+                  const activeLocksCount = locks.filter(Boolean).length;
+                  const protectionScore = Math.round((activeLocksCount / 6) * 10);
+
+                  // E. Reference Images (25 pts): 7 slots (~3.57 pts each slot, sum to 25)
+                  const filledImagesCount = referenceSlots.filter(({ slot }) => Boolean(images?.[slot])).length;
+                  const imageScore = Math.round((filledImagesCount / 7) * 25);
+
+                  const aiReadinessScore = Math.min(
+                    100,
+                    Math.max(0, identityScore + constructionScore + visualScore + protectionScore + imageScore)
+                  );
+
+                  const readinessStatus =
+                    aiReadinessScore >= 80
+                      ? 'Ready'
+                      : aiReadinessScore >= 50
+                      ? 'Needs Improvement'
+                      : 'Not Ready';
+
+                  const readinessBadgeClass =
+                    aiReadinessScore >= 80
+                      ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
+                      : aiReadinessScore >= 50
+                      ? 'bg-amber-100 text-amber-800 border-amber-200'
+                      : 'bg-rose-100 text-rose-800 border-rose-200';
+
+                  const readinessDotClass =
+                    aiReadinessScore >= 80
+                      ? 'bg-emerald-600'
+                      : aiReadinessScore >= 50
+                      ? 'bg-amber-600'
+                      : 'bg-rose-600';
+
                   const handleResetDna = async () => {
                     setDnaLoading(true);
                     setMessage(null);
@@ -682,25 +757,64 @@ export default function ProductDetailPage() {
 
                   return (
                     <div className="rounded-3xl border border-slate-200 bg-slate-50 p-6 sm:p-8">
-                      <div className="flex flex-col gap-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+                      <div className="flex flex-col gap-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:flex-row sm:items-center sm:justify-between">
                         <div>
                           <div className="flex flex-wrap items-center gap-3">
                             <h2 className="text-2xl font-semibold text-slate-950">{product.name}</h2>
                             <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">{product.code}</span>
-                            <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${isComplete ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}`}>
-                              <span className={`h-2 w-2 rounded-full ${isComplete ? 'bg-emerald-600' : 'bg-amber-600'}`} />
-                              {isComplete ? 'Complete' : 'Incomplete'}
+                            <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold ${readinessBadgeClass}`}>
+                              <span className={`h-2 w-2 rounded-full ${readinessDotClass}`} />
+                              AI Readiness: {readinessStatus} ({aiReadinessScore}/100)
                             </span>
                           </div>
                           <p className="mt-2 text-sm text-slate-500">
                             Kelola profil spesifikasi genetik produk untuk presisi AI Generator dan Prompt Factory.
                           </p>
                         </div>
-                        <div className="flex flex-col items-start gap-2 sm:items-end">
-                          <span className="text-sm font-bold text-slate-900">{percentage}% Completed</span>
-                          <div className="w-48 overflow-hidden rounded-full bg-slate-100 sm:w-56">
-                            <div className="h-2.5 rounded-full bg-violet-600 transition-all duration-300" style={{ width: `${percentage}%` }} />
+                        <div className="flex flex-col items-start gap-3 sm:items-end">
+                          <div className="flex items-center gap-4">
+                            <div className="text-right">
+                              <span className="block text-xs uppercase tracking-wider text-slate-400">Completion</span>
+                              <span className="text-sm font-bold text-slate-900">{percentage}%</span>
+                            </div>
+                            <div className="text-right">
+                              <span className="block text-xs uppercase tracking-wider text-slate-400">AI Score</span>
+                              <span className="text-sm font-bold text-violet-700">{aiReadinessScore} / 100</span>
+                            </div>
                           </div>
+                          <div className="w-48 overflow-hidden rounded-full bg-slate-100 sm:w-56">
+                            <div className="h-2.5 rounded-full bg-violet-600 transition-all duration-300" style={{ width: `${aiReadinessScore}%` }} />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* AI Readiness Breakdown Card */}
+                      <div className="mt-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+                        <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
+                          <div className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-violet-50 text-violet-700">
+                            <Sparkles className="h-5 w-5" />
+                          </div>
+                          <div>
+                            <h3 className="text-lg font-semibold text-slate-950">AI Readiness Score Breakdown</h3>
+                            <p className="text-xs text-slate-500">Evaluasi kelayakan data untuk rendering prompt AI (Target: 80+ Ready)</p>
+                          </div>
+                        </div>
+                        <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+                          {[
+                            { label: 'Identity', score: identityScore, max: 20 },
+                            { label: 'Construction', score: constructionScore, max: 20 },
+                            { label: 'Visual Identity', score: visualScore, max: 25 },
+                            { label: 'AI Protection', score: protectionScore, max: 10 },
+                            { label: 'Reference Images', score: imageScore, max: 25 },
+                          ].map((item) => (
+                            <div key={item.label} className="rounded-2xl border border-slate-200 bg-slate-50/50 p-4">
+                              <p className="text-xs font-semibold text-slate-600">{item.label}</p>
+                              <p className="mt-2 text-xl font-bold text-slate-950">{item.score} <span className="text-xs font-normal text-slate-400">/ {item.max}</span></p>
+                              <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-slate-200">
+                                <div className="h-full rounded-full bg-violet-600 transition-all duration-300" style={{ width: `${(item.score / item.max) * 100}%` }} />
+                              </div>
+                            </div>
+                          ))}
                         </div>
                       </div>
 
@@ -896,6 +1010,316 @@ export default function ProductDetailPage() {
                             <Check className="h-4 w-4" />
                             Save Product DNA
                           </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+            ) : activeTab === 'Prompt Factory' ? (
+              <div className="space-y-6">
+                {(() => {
+                  const dnaFields = [
+                    dnaSku, dnaBrand, dnaCategory, dnaAgeRange, dnaGender,
+                    dnaMaterial, dnaFinishing, dnaVisor, dnaBuckle, dnaWeight, dnaSni,
+                    dnaTheme, dnaPrimaryColor, dnaSecondaryColor, dnaAccentColor, dnaPattern, dnaLogoPosition,
+                    dnaBrandLock, dnaShapeLock, dnaMaterialLock, dnaGraphicLock, dnaLogoLock, dnaColorLock,
+                    dnaNotes
+                  ];
+                  const filledCount = dnaFields.filter((val) => typeof val === 'boolean' ? val : Boolean(val && String(val).trim())).length;
+                  const totalFields = dnaFields.length;
+                  const percentage = Math.round((filledCount / totalFields) * 100);
+
+                  const identityScore = [dnaSku, dnaBrand, dnaCategory, dnaAgeRange, dnaGender].reduce(
+                    (acc, val) => acc + (val.trim() ? 4 : 0),
+                    0
+                  );
+                  const constructionScore =
+                    (dnaMaterial.trim() ? 4 : 0) +
+                    (dnaFinishing.trim() ? 3 : 0) +
+                    (dnaVisor.trim() ? 3 : 0) +
+                    (dnaBuckle.trim() ? 3 : 0) +
+                    (dnaWeight.trim() ? 3 : 0) +
+                    (dnaSni ? 4 : 0);
+                  const visualScore =
+                    (dnaTheme.trim() ? 5 : 0) +
+                    (dnaPrimaryColor.trim() ? 5 : 0) +
+                    (dnaSecondaryColor.trim() ? 4 : 0) +
+                    (dnaAccentColor.trim() ? 3 : 0) +
+                    (dnaPattern.trim() ? 4 : 0) +
+                    (dnaLogoPosition.trim() ? 4 : 0);
+                  const locks = [dnaBrandLock, dnaShapeLock, dnaMaterialLock, dnaGraphicLock, dnaLogoLock, dnaColorLock];
+                  const activeLocksCount = locks.filter(Boolean).length;
+                  const protectionScore = Math.round((activeLocksCount / 6) * 10);
+                  const filledImagesCount = referenceSlots.filter(({ slot }) => Boolean(images?.[slot])).length;
+                  const imageScore = Math.round((filledImagesCount / 7) * 25);
+
+                  const aiReadinessScore = Math.min(
+                    100,
+                    Math.max(0, identityScore + constructionScore + visualScore + protectionScore + imageScore)
+                  );
+
+                  const generatedPromptText = useMemo(() => {
+                    const skuText = dnaSku || product.code;
+                    const effectiveBrand = dnaBrand.trim() ? dnaBrand : (product.brand?.trim() || '');
+                    const nameText = product.name || dnaCategory || product.category || 'Product Item';
+                    const categoryText = dnaCategory || product.category || 'General';
+                    const ageText = dnaAgeRange || product.targetAge || '';
+                    const themeText = dnaTheme || product.theme || 'Standard';
+                    const materialText = dnaMaterial || product.shellMaterial || 'Premium Material';
+                    const visorText = dnaVisor || product.visor || '';
+                    const buckleText = dnaBuckle || product.buckle || '';
+                    const primaryCol = dnaPrimaryColor || 'Primary';
+                    const secondaryCol = dnaSecondaryColor || 'Secondary';
+                    const accentCol = dnaAccentColor || 'Accent';
+                    const patternText = dnaPattern || 'Geometric';
+                    const notesText = dnaNotes || 'None';
+
+                    const brandLine = effectiveBrand ? `- Brand: ${effectiveBrand}` : '';
+                    const ageLine = ageText ? `- Target Demographic / Age: ${ageText}` : '';
+                    const visorLine = visorText ? `- Fastening / Attachment / Visor: ${visorText}` : '';
+                    const buckleLine = buckleText ? `- Hardware / Buckle: ${buckleText}` : '';
+
+                    const brandLockText = dnaBrandLock ? 'Strictly preserve brand identity, typography, and styling.' : '';
+                    const shapeLockText = dnaShapeLock ? 'Preserve exact product geometry, dimensions, and proportions. Do not morph or redesign the product.' : '';
+                    const materialLockText = dnaMaterialLock ? 'Preserve exact surface finish, texture, and material response.' : '';
+                    const graphicLockText = dnaGraphicLock ? 'Preserve decal placement, graphics, scale, and artwork.' : '';
+                    
+                    let logoLockText = '';
+                    if (dnaLogoLock) {
+                      if (effectiveBrand) {
+                        logoLockText = `Preserve the ${effectiveBrand} logo exactly as shown in the reference images, clearly visible and undistorted.`;
+                      } else {
+                        logoLockText = 'Preserve all logos and identifying marks exactly as shown in the reference images.';
+                      }
+                    }
+
+                    const colorLockText = dnaColorLock ? 'Preserve exact color palette.' : '';
+
+                    return `Create a premium, photorealistic commercial product asset for ${promptPlatform}. Use the supplied reference images as the absolute visual source of truth.
+
+PRODUCT IDENTITY & DNA
+- Product Name: ${nameText}
+- SKU / Code: ${skuText}
+${brandLine}
+- Category: ${categoryText}
+${ageLine}
+- Theme & Graphics: ${themeText} (${patternText})
+- Colors: ${primaryCol} (Primary), ${secondaryCol} (Secondary), ${accentCol} (Accent)
+
+CONSTRUCTION & MATERIALS
+- Material / Surface: ${materialText} (${dnaFinishing || 'Standard finish'})
+${visorLine}
+${buckleLine}
+- Weight / Certification: ${dnaWeight || 'Standard'} ${dnaSni ? '(Certified)' : ''}
+
+PHOTOGRAPHY STYLE & SCENE
+- Style: ${promptStyle}
+- Camera: ${promptCamera}
+- Lighting: ${promptLighting}
+
+AI PROTECTION & LOCKS
+- ${brandLockText}
+- ${shapeLockText}
+- ${materialLockText}
+- ${graphicLockText}
+- ${logoLockText}
+- ${colorLockText}
+
+SPECIAL NOTES
+${notesText}
+
+OUTPUT REQUIREMENTS
+Commercial grade, photorealistic, ultra-detailed product asset, suitable for marketplace and social-media advertising. [Revision: v${regenerateVersion + 1}]`;
+                  }, [
+                    dnaSku, dnaBrand, dnaCategory, dnaAgeRange, dnaTheme, dnaMaterial, dnaFinishing, dnaVisor, dnaBuckle, dnaWeight, dnaSni,
+                    dnaPrimaryColor, dnaSecondaryColor, dnaAccentColor, dnaPattern, dnaLogoPosition, dnaNotes,
+                    dnaBrandLock, dnaShapeLock, dnaMaterialLock, dnaGraphicLock, dnaLogoLock, dnaColorLock,
+                    promptStyle, promptCamera, promptLighting, promptPlatform, product, regenerateVersion
+                  ]);
+
+                  const readinessStatus =
+                    aiReadinessScore >= 80
+                      ? 'Ready'
+                      : aiReadinessScore >= 50
+                      ? 'Needs Improvement'
+                      : 'Not Ready';
+
+                  async function handleCopyPrompt() {
+                    setPromptCopyStatus(null);
+                    setPromptCopyError(null);
+                    try {
+                      if (!navigator.clipboard?.writeText) {
+                        throw new Error('Clipboard API tidak didukung browser ini.');
+                      }
+                      await navigator.clipboard.writeText(generatedPromptText);
+                      setPromptCopyStatus('Prompt berhasil disalin ke clipboard!');
+                      setTimeout(() => setPromptCopyStatus(null), 3500);
+                    } catch (err) {
+                      setPromptCopyError((err as Error).message || 'Gagal menyalin prompt.');
+                      setTimeout(() => setPromptCopyError(null), 3500);
+                    }
+                  }
+
+                  function handleRegeneratePrompt() {
+                    setRegenerateVersion((v) => v + 1);
+                    setPromptCopyStatus('Prompt berhasil diregenerasi secara deterministik.');
+                    setTimeout(() => setPromptCopyStatus(null), 3500);
+                  }
+
+                  return (
+                    <div className="space-y-6">
+                      <div className="rounded-3xl border border-slate-200 bg-slate-50 p-6 sm:p-8">
+                        {aiReadinessScore < 80 && (
+                          <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 shadow-sm">
+                            <div className="flex items-center gap-3">
+                              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-amber-200 font-bold text-amber-800 text-xs">!</span>
+                              <div>
+                                <strong className="font-semibold">AI Readiness Score: {aiReadinessScore}/100 ({readinessStatus}).</strong>{' '}
+                                Data Product DNA atau gambar referensi belum lengkap (di bawah 80). Prompt tetap dapat dihasilkan, namun kualitas hasil render AI mungkin lebih rendah.
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        <div className="grid gap-6 lg:grid-cols-2">
+                          {/* Left Column: Product Context & Prompt Settings */}
+                          <div className="space-y-6">
+                            <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+                              <h3 className="text-lg font-semibold text-slate-950">1. Product Context (Read Only)</h3>
+                              <p className="mt-1 text-xs text-slate-500">Sumber data dari Product DNA aktif</p>
+                              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                                <div className="rounded-2xl bg-slate-50 p-3">
+                                  <span className="block text-xs uppercase tracking-wider text-slate-400">SKU / Code</span>
+                                  <span className="mt-1 block text-sm font-semibold text-slate-900">{dnaSku || product.code}</span>
+                                </div>
+                                <div className="rounded-2xl bg-slate-50 p-3">
+                                  <span className="block text-xs uppercase tracking-wider text-slate-400">Brand</span>
+                                  <span className="mt-1 block text-sm font-semibold text-slate-900">{dnaBrand || product.brand}</span>
+                                </div>
+                                <div className="rounded-2xl bg-slate-50 p-3">
+                                  <span className="block text-xs uppercase tracking-wider text-slate-400">Theme</span>
+                                  <span className="mt-1 block text-sm font-semibold text-slate-900">{dnaTheme || product.theme || '—'}</span>
+                                </div>
+                                <div className="rounded-2xl bg-slate-50 p-3">
+                                  <span className="block text-xs uppercase tracking-wider text-slate-400">Material</span>
+                                  <span className="mt-1 block text-sm font-semibold text-slate-900">{dnaMaterial || product.shellMaterial || '—'}</span>
+                                </div>
+                              </div>
+                            </section>
+
+                            <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
+                              <h3 className="text-lg font-semibold text-slate-950">2. Generation Parameters</h3>
+                              <p className="text-xs text-slate-500">Sesuaikan gaya fotografi, kamera, pencahayaan, dan platform AI</p>
+
+                              <label className="block space-y-2 text-sm text-slate-700">
+                                <span className="text-xs font-semibold uppercase tracking-wider text-slate-600">Photography Style</span>
+                                <select
+                                  value={promptStyle}
+                                  onChange={(e) => setPromptStyle(e.target.value)}
+                                  className="w-full rounded-2xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-violet-600 focus:bg-white focus:ring-4 focus:ring-violet-100"
+                                >
+                                  <option>Studio Minimalist</option>
+                                  <option>Lifestyle Kids Room</option>
+                                  <option>Outdoor Urban Daylight</option>
+                                  <option>Neon Cyberpunk Commercial</option>
+                                </select>
+                              </label>
+
+                              <label className="block space-y-2 text-sm text-slate-700">
+                                <span className="text-xs font-semibold uppercase tracking-wider text-slate-600">Camera</span>
+                                <select
+                                  value={promptCamera}
+                                  onChange={(e) => setPromptCamera(e.target.value)}
+                                  className="w-full rounded-2xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-violet-600 focus:bg-white focus:ring-4 focus:ring-violet-100"
+                                >
+                                  <option>Eye-level 50mm portrait</option>
+                                  <option>Macro detail close-up shot</option>
+                                  <option>Cinematic 85mm shallow depth</option>
+                                  <option>Low angle hero shot</option>
+                                </select>
+                              </label>
+
+                              <label className="block space-y-2 text-sm text-slate-700">
+                                <span className="text-xs font-semibold uppercase tracking-wider text-slate-600">Lighting</span>
+                                <select
+                                  value={promptLighting}
+                                  onChange={(e) => setPromptLighting(e.target.value)}
+                                  className="w-full rounded-2xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-violet-600 focus:bg-white focus:ring-4 focus:ring-violet-100"
+                                >
+                                  <option>Soft Studio Softbox</option>
+                                  <option>Dramatic Rim Light</option>
+                                  <option>Natural Golden Hour Sunlight</option>
+                                  <option>Clean High-Key Commercial</option>
+                                </select>
+                              </label>
+
+                              <label className="block space-y-2 text-sm text-slate-700">
+                                <span className="text-xs font-semibold uppercase tracking-wider text-slate-600">AI Platform</span>
+                                <select
+                                  value={promptPlatform}
+                                  onChange={(e) => setPromptPlatform(e.target.value)}
+                                  className="w-full rounded-2xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-violet-600 focus:bg-white focus:ring-4 focus:ring-violet-100"
+                                >
+                                  <option>Google Imagen</option>
+                                  <option>Google Veo</option>
+                                  <option>ChatGPT Image</option>
+                                  <option>Kling</option>
+                                </select>
+                              </label>
+                            </section>
+                          </div>
+
+                          {/* Right Column: Prompt Preview & Actions */}
+                          <div className="space-y-6">
+                            <section className="flex flex-col h-full rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+                              <div className="flex items-center justify-between gap-4 border-b border-slate-100 pb-4">
+                                <div>
+                                  <h3 className="text-lg font-semibold text-slate-950">Prompt Preview</h3>
+                                  <p className="text-xs text-slate-500">Generated for {promptPlatform}</p>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={handleRegeneratePrompt}
+                                    className="inline-flex items-center gap-1.5 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 shadow-sm"
+                                  >
+                                    <RotateCcw className="h-3.5 w-3.5" />
+                                    Regenerate
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={handleCopyPrompt}
+                                    className="inline-flex items-center gap-1.5 rounded-2xl bg-violet-700 px-4 py-2.5 text-xs font-semibold text-white transition hover:bg-violet-800 shadow-sm"
+                                  >
+                                    <Check className="h-3.5 w-3.5" />
+                                    Copy Prompt
+                                  </button>
+                                </div>
+                              </div>
+
+                              {promptCopyStatus && (
+                                <div className="mt-4 rounded-2xl bg-emerald-50 border border-emerald-200 p-3 text-xs font-medium text-emerald-800">
+                                  {promptCopyStatus}
+                                </div>
+                              )}
+
+                              {promptCopyError && (
+                                <div className="mt-4 rounded-2xl bg-rose-50 border border-rose-200 p-3 text-xs font-medium text-rose-800">
+                                  {promptCopyError}
+                                </div>
+                              )}
+
+                              <div className="mt-4 flex-1">
+                                <textarea
+                                  readOnly
+                                  value={generatedPromptText}
+                                  rows={18}
+                                  className="w-full resize-none rounded-2xl border border-slate-200 bg-slate-900 p-4 font-mono text-xs leading-relaxed text-slate-100 outline-none"
+                                />
+                              </div>
+                            </section>
+                          </div>
                         </div>
                       </div>
                     </div>
