@@ -338,6 +338,86 @@ export default function ProductDetailPage() {
     [product],
   );
 
+  const generatedPromptText = useMemo(() => {
+    if (!product) return '';
+    const skuText = dnaSku || product.code;
+    const effectiveBrand = dnaBrand.trim() ? dnaBrand : (product.brand?.trim() || '');
+    const nameText = product.name || dnaCategory || product.category || 'Product Item';
+    const categoryText = dnaCategory || product.category || 'General';
+    const ageText = dnaAgeRange || product.targetAge || '';
+    const themeText = dnaTheme || product.theme || 'Standard';
+    const materialText = dnaMaterial || product.shellMaterial || 'Premium Material';
+    const visorText = dnaVisor || product.visor || '';
+    const buckleText = dnaBuckle || product.buckle || '';
+    const primaryCol = dnaPrimaryColor || 'Primary';
+    const secondaryCol = dnaSecondaryColor || 'Secondary';
+    const accentCol = dnaAccentColor || 'Accent';
+    const patternText = dnaPattern || 'Geometric';
+    const notesText = dnaNotes || 'None';
+
+    const brandLine = effectiveBrand ? `- Brand: ${effectiveBrand}` : '';
+    const ageLine = ageText ? `- Target Demographic / Age: ${ageText}` : '';
+    const visorLine = visorText ? `- Fastening / Attachment / Visor: ${visorText}` : '';
+    const buckleLine = buckleText ? `- Hardware / Buckle: ${buckleText}` : '';
+
+    const brandLockText = dnaBrandLock ? 'Strictly preserve brand identity, typography, and styling.' : '';
+    const shapeLockText = dnaShapeLock ? 'Preserve exact product geometry, dimensions, and proportions. Do not morph or redesign the product.' : '';
+    const materialLockText = dnaMaterialLock ? 'Preserve exact surface finish, texture, and material response.' : '';
+    const graphicLockText = dnaGraphicLock ? 'Preserve decal placement, graphics, scale, and artwork.' : '';
+    
+    let logoLockText = '';
+    if (dnaLogoLock) {
+      if (effectiveBrand) {
+        logoLockText = `Preserve the ${effectiveBrand} logo exactly as shown in the reference images, clearly visible and undistorted.`;
+      } else {
+        logoLockText = 'Preserve all logos and identifying marks exactly as shown in the reference images.';
+      }
+    }
+
+    const colorLockText = dnaColorLock ? 'Preserve exact color palette.' : '';
+
+    return `Create a premium, photorealistic commercial product asset for ${promptPlatform}. Use the supplied reference images as the absolute visual source of truth.
+
+PRODUCT IDENTITY & DNA
+- Product Name: ${nameText}
+- SKU / Code: ${skuText}
+${brandLine}
+- Category: ${categoryText}
+${ageLine}
+- Theme & Graphics: ${themeText} (${patternText})
+- Colors: ${primaryCol} (Primary), ${secondaryCol} (Secondary), ${accentCol} (Accent)
+
+CONSTRUCTION & MATERIALS
+- Material / Surface: ${materialText} (${dnaFinishing || 'Standard finish'})
+${visorLine}
+${buckleLine}
+- Weight / Certification: ${dnaWeight || 'Standard'} ${dnaSni ? '(Certified)' : ''}
+
+PHOTOGRAPHY STYLE & SCENE
+- Style: ${promptStyle}
+- Camera: ${promptCamera}
+- Lighting: ${promptLighting}
+
+AI PROTECTION & LOCKS
+- ${brandLockText}
+- ${shapeLockText}
+- ${materialLockText}
+- ${graphicLockText}
+- ${logoLockText}
+- ${colorLockText}
+
+SPECIAL NOTES
+${notesText}
+
+OUTPUT REQUIREMENTS
+Commercial grade, photorealistic, ultra-detailed product asset, suitable for marketplace and social-media advertising. [Revision: v${regenerateVersion + 1}]`;
+  }, [
+    dnaSku, dnaBrand, dnaCategory, dnaAgeRange, dnaTheme, dnaMaterial, dnaFinishing, dnaVisor, dnaBuckle, dnaWeight, dnaSni,
+    dnaPrimaryColor, dnaSecondaryColor, dnaAccentColor, dnaPattern, dnaLogoPosition, dnaNotes,
+    dnaBrandLock, dnaShapeLock, dnaMaterialLock, dnaGraphicLock, dnaLogoLock, dnaColorLock,
+    promptStyle, promptCamera, promptLighting, promptPlatform, product, regenerateVersion
+  ]);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-100 p-6 sm:p-10">
@@ -1059,84 +1139,7 @@ export default function ProductDetailPage() {
                     Math.max(0, identityScore + constructionScore + visualScore + protectionScore + imageScore)
                   );
 
-                  const generatedPromptText = useMemo(() => {
-                    const skuText = dnaSku || product.code;
-                    const effectiveBrand = dnaBrand.trim() ? dnaBrand : (product.brand?.trim() || '');
-                    const nameText = product.name || dnaCategory || product.category || 'Product Item';
-                    const categoryText = dnaCategory || product.category || 'General';
-                    const ageText = dnaAgeRange || product.targetAge || '';
-                    const themeText = dnaTheme || product.theme || 'Standard';
-                    const materialText = dnaMaterial || product.shellMaterial || 'Premium Material';
-                    const visorText = dnaVisor || product.visor || '';
-                    const buckleText = dnaBuckle || product.buckle || '';
-                    const primaryCol = dnaPrimaryColor || 'Primary';
-                    const secondaryCol = dnaSecondaryColor || 'Secondary';
-                    const accentCol = dnaAccentColor || 'Accent';
-                    const patternText = dnaPattern || 'Geometric';
-                    const notesText = dnaNotes || 'None';
 
-                    const brandLine = effectiveBrand ? `- Brand: ${effectiveBrand}` : '';
-                    const ageLine = ageText ? `- Target Demographic / Age: ${ageText}` : '';
-                    const visorLine = visorText ? `- Fastening / Attachment / Visor: ${visorText}` : '';
-                    const buckleLine = buckleText ? `- Hardware / Buckle: ${buckleText}` : '';
-
-                    const brandLockText = dnaBrandLock ? 'Strictly preserve brand identity, typography, and styling.' : '';
-                    const shapeLockText = dnaShapeLock ? 'Preserve exact product geometry, dimensions, and proportions. Do not morph or redesign the product.' : '';
-                    const materialLockText = dnaMaterialLock ? 'Preserve exact surface finish, texture, and material response.' : '';
-                    const graphicLockText = dnaGraphicLock ? 'Preserve decal placement, graphics, scale, and artwork.' : '';
-                    
-                    let logoLockText = '';
-                    if (dnaLogoLock) {
-                      if (effectiveBrand) {
-                        logoLockText = `Preserve the ${effectiveBrand} logo exactly as shown in the reference images, clearly visible and undistorted.`;
-                      } else {
-                        logoLockText = 'Preserve all logos and identifying marks exactly as shown in the reference images.';
-                      }
-                    }
-
-                    const colorLockText = dnaColorLock ? 'Preserve exact color palette.' : '';
-
-                    return `Create a premium, photorealistic commercial product asset for ${promptPlatform}. Use the supplied reference images as the absolute visual source of truth.
-
-PRODUCT IDENTITY & DNA
-- Product Name: ${nameText}
-- SKU / Code: ${skuText}
-${brandLine}
-- Category: ${categoryText}
-${ageLine}
-- Theme & Graphics: ${themeText} (${patternText})
-- Colors: ${primaryCol} (Primary), ${secondaryCol} (Secondary), ${accentCol} (Accent)
-
-CONSTRUCTION & MATERIALS
-- Material / Surface: ${materialText} (${dnaFinishing || 'Standard finish'})
-${visorLine}
-${buckleLine}
-- Weight / Certification: ${dnaWeight || 'Standard'} ${dnaSni ? '(Certified)' : ''}
-
-PHOTOGRAPHY STYLE & SCENE
-- Style: ${promptStyle}
-- Camera: ${promptCamera}
-- Lighting: ${promptLighting}
-
-AI PROTECTION & LOCKS
-- ${brandLockText}
-- ${shapeLockText}
-- ${materialLockText}
-- ${graphicLockText}
-- ${logoLockText}
-- ${colorLockText}
-
-SPECIAL NOTES
-${notesText}
-
-OUTPUT REQUIREMENTS
-Commercial grade, photorealistic, ultra-detailed product asset, suitable for marketplace and social-media advertising. [Revision: v${regenerateVersion + 1}]`;
-                  }, [
-                    dnaSku, dnaBrand, dnaCategory, dnaAgeRange, dnaTheme, dnaMaterial, dnaFinishing, dnaVisor, dnaBuckle, dnaWeight, dnaSni,
-                    dnaPrimaryColor, dnaSecondaryColor, dnaAccentColor, dnaPattern, dnaLogoPosition, dnaNotes,
-                    dnaBrandLock, dnaShapeLock, dnaMaterialLock, dnaGraphicLock, dnaLogoLock, dnaColorLock,
-                    promptStyle, promptCamera, promptLighting, promptPlatform, product, regenerateVersion
-                  ]);
 
                   const readinessStatus =
                     aiReadinessScore >= 80
