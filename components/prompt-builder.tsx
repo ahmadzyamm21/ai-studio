@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { cameras, lights, scenes } from '@/lib/data';
+import { BackgroundItem, getActiveBackground } from '@/lib/background/getActiveBackground';
 
 type StoredProduct = {
   id: string;
@@ -45,6 +46,7 @@ export function PromptBuilder() {
   const [aspect, setAspect] = useState('1:1');
   const [duration, setDuration] = useState('8 seconds');
   const [notice, setNotice] = useState('');
+  const [activeBackground, setActiveBackground] = useState<BackgroundItem | null>(null);
 
   useEffect(() => {
     const saved = window.localStorage.getItem('ai-studio-products');
@@ -60,6 +62,10 @@ export function PromptBuilder() {
     }
   }, []);
 
+  useEffect(() => {
+    setActiveBackground(getActiveBackground());
+  }, []);
+
   const product = products.find((item) => item.id === productId) ?? products[0];
   const scene = scenes.find((item) => item.id === sceneId) ?? scenes[0];
   const camera = cameras.find((item) => item.id === cameraId) ?? cameras[0];
@@ -68,7 +74,11 @@ export function PromptBuilder() {
 
   const prompt = useMemo(() => {
     if (!product) return '';
-    return `Create a premium, photorealistic commercial product video for ${platform}. Use the seven supplied reference images as the only visual source of truth.
+    const backgroundInstruction = activeBackground
+      ? `\n\nBACKGROUND REFERENCE\nUse the selected background image as the exact environment.\nPreserve:\n- room layout\n- floor\n- wall\n- furniture\n- perspective\n- lighting direction\n- depth\n- shadows\n\nDo not recreate or redesign the environment.\n\nThe product must integrate naturally into the supplied background while preserving the original background composition.`
+      : '';
+
+    return `Create a premium, photorealistic commercial product video for ${platform}. Use the seven supplied reference images as the only visual source of truth.${backgroundInstruction}
 
 PRODUCT IDENTITY
 Product: ${product.name}
@@ -104,7 +114,7 @@ No redesign, changed logo, misspelled text, altered decal, extra vents, missing 
 
 OUTPUT
 Commercial quality, photorealistic, sharp product detail, ${aspect} aspect ratio, ${duration}, suitable for marketplace and social-media advertising.`;
-  }, [product, scene, camera, light, platform, aspect, duration]);
+  }, [activeBackground, product, scene, camera, light, platform, aspect, duration]);
 
   async function copyPrompt() {
     await navigator.clipboard.writeText(prompt);
@@ -166,6 +176,25 @@ Commercial quality, photorealistic, sharp product detail, ${aspect} aspect ratio
           <div><strong>Reference readiness</strong><span>{referenceCount}/7 photos recorded</span></div>
           <div className="progress-track"><span style={{ width: `${(referenceCount / 7) * 100}%` }} /></div>
           <small>{referenceCount === 7 ? 'Semua sudut sudah lengkap.' : 'Lengkapi 7 foto pada menu Products. Top view wajib menampilkan logo.'}</small>
+        </div>
+      </section>
+
+      <section className="card prompt-output">
+        <div className="prompt-output-header">
+          <div><div className="eyebrow">Background</div><strong>Active background</strong></div>
+        </div>
+        <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
+          {activeBackground ? (
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+              <img src={activeBackground.path} alt={activeBackground.name} className="h-28 w-28 rounded-3xl object-cover" />
+              <div className="space-y-2">
+                <p className="text-sm font-semibold text-slate-950">{activeBackground.name}</p>
+                <p className="text-sm text-slate-500">Active background selected</p>
+              </div>
+            </div>
+          ) : (
+            <p className="text-sm text-slate-500">No active background selected.</p>
+          )}
         </div>
       </section>
 
