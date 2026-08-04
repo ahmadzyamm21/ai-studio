@@ -1,10 +1,14 @@
 'use client';
 
-import { ChangeEvent, useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowLeft, Check, Lock, Palette, Pencil, ShieldCheck, Sparkles, Trash2, UploadCloud, FileText, Box, Layers, RotateCcw } from 'lucide-react';
+import { ChangeEvent, useEffect, useMemo, useState } from 'react';
+import { ArrowLeft, Box, Check, FileText, Layers, Palette, Pencil, RotateCcw, ShieldCheck, Sparkles } from 'lucide-react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import ReferenceImageCard from '@/components/reference-images/ReferenceImageCard';
+import ProductOverviewTab from '@/components/product-workspace/ProductOverviewTab';
+import ReferenceImagesTab from '@/components/product-workspace/ReferenceImagesTab';
+import ProductDNATab from '@/components/product-workspace/ProductDNATab';
+import PromptFactoryTab from '@/components/product-workspace/PromptFactoryTab';
 
 type ProductStatus = 'Active' | 'Draft' | 'Inactive';
 
@@ -108,8 +112,6 @@ export default function ProductDetailPage() {
   const [promptCopyStatus, setPromptCopyStatus] = useState<string | null>(null);
   const [promptCopyError, setPromptCopyError] = useState<string | null>(null);
   const [regenerateVersion, setRegenerateVersion] = useState(0);
-
-  const uploadInputs = useRef<Record<string, HTMLInputElement | null>>({});
 
   useEffect(() => {
     if (!id) {
@@ -337,6 +339,184 @@ export default function ProductDetailPage() {
         : [],
     [product],
   );
+
+  const dnaFields = [
+    dnaSku, dnaBrand, dnaCategory, dnaAgeRange, dnaGender,
+    dnaMaterial, dnaFinishing, dnaVisor, dnaBuckle, dnaWeight, dnaSni,
+    dnaTheme, dnaPrimaryColor, dnaSecondaryColor, dnaAccentColor, dnaPattern, dnaLogoPosition,
+    dnaBrandLock, dnaShapeLock, dnaMaterialLock, dnaGraphicLock, dnaLogoLock, dnaColorLock,
+    dnaNotes,
+  ];
+  const filledCount = dnaFields.filter((val) => typeof val === 'boolean' ? val : Boolean(val && String(val).trim())).length;
+  const percentage = Math.round((filledCount / dnaFields.length) * 100);
+  const identityScore = [dnaSku, dnaBrand, dnaCategory, dnaAgeRange, dnaGender].reduce(
+    (acc, val) => acc + (val.trim() ? 4 : 0),
+    0,
+  );
+  const constructionScore =
+    (dnaMaterial.trim() ? 4 : 0) +
+    (dnaFinishing.trim() ? 3 : 0) +
+    (dnaVisor.trim() ? 3 : 0) +
+    (dnaBuckle.trim() ? 3 : 0) +
+    (dnaWeight.trim() ? 3 : 0) +
+    (dnaSni ? 4 : 0);
+  const visualScore =
+    (dnaTheme.trim() ? 5 : 0) +
+    (dnaPrimaryColor.trim() ? 5 : 0) +
+    (dnaSecondaryColor.trim() ? 4 : 0) +
+    (dnaAccentColor.trim() ? 3 : 0) +
+    (dnaPattern.trim() ? 4 : 0) +
+    (dnaLogoPosition.trim() ? 4 : 0);
+  const locks = [dnaBrandLock, dnaShapeLock, dnaMaterialLock, dnaGraphicLock, dnaLogoLock, dnaColorLock];
+  const activeLocksCount = locks.filter(Boolean).length;
+  const protectionScore = Math.round((activeLocksCount / 6) * 10);
+  const filledImagesCount = referenceSlots.filter(({ slot }) => Boolean(images?.[slot])).length;
+  const imageScore = Math.round((filledImagesCount / 7) * 25);
+  const aiReadinessScore = Math.min(100, Math.max(0, identityScore + constructionScore + visualScore + protectionScore + imageScore));
+  const readinessStatus = aiReadinessScore >= 80 ? 'Ready' : aiReadinessScore >= 50 ? 'Needs Improvement' : 'Not Ready';
+  const readinessBadgeClass = aiReadinessScore >= 80 ? 'bg-emerald-100 text-emerald-800 border-emerald-200' : aiReadinessScore >= 50 ? 'bg-amber-100 text-amber-800 border-amber-200' : 'bg-rose-100 text-rose-800 border-rose-200';
+  const readinessDotClass = aiReadinessScore >= 80 ? 'bg-emerald-600' : aiReadinessScore >= 50 ? 'bg-amber-600' : 'bg-rose-600';
+
+  const handleResetDna = async () => {
+    setDnaLoading(true);
+    setMessage(null);
+    try {
+      const response = await fetch(`/api/products/${id}/dna`);
+      if (!response.ok) {
+        throw new Error('Gagal mereset Product DNA.');
+      }
+      const data = await response.json();
+      const dna = data.dna;
+      if (dna) {
+        setDnaSku(dna.sku ?? '');
+        setDnaBrand(dna.brand ?? '');
+        setDnaCategory(dna.category ?? '');
+        setDnaAgeRange(dna.ageRange ?? '');
+        setDnaGender(dna.gender ?? '');
+        setDnaMaterial(dna.material ?? '');
+        setDnaFinishing(dna.finishing ?? '');
+        setDnaVisor(dna.visor ?? '');
+        setDnaBuckle(dna.buckle ?? '');
+        setDnaWeight(dna.weight ?? '');
+        setDnaSni(Boolean(dna.sni));
+        setDnaTheme(dna.theme ?? '');
+        setDnaPrimaryColor(dna.primaryColor ?? '');
+        setDnaSecondaryColor(dna.secondaryColor ?? '');
+        setDnaAccentColor(dna.accentColor ?? '');
+        setDnaPattern(dna.pattern ?? '');
+        setDnaLogoPosition(dna.logoPosition ?? '');
+        setDnaBrandLock(dna.brandLock ?? true);
+        setDnaShapeLock(dna.shapeLock ?? true);
+        setDnaMaterialLock(dna.materialLock ?? true);
+        setDnaGraphicLock(dna.graphicLock ?? true);
+        setDnaLogoLock(dna.logoLock ?? true);
+        setDnaColorLock(dna.colorLock ?? true);
+        setDnaNotes(dna.notes ?? '');
+      } else {
+        setDnaSku('');
+        setDnaBrand('');
+        setDnaCategory('');
+        setDnaAgeRange('');
+        setDnaGender('');
+        setDnaMaterial('');
+        setDnaFinishing('');
+        setDnaVisor('');
+        setDnaBuckle('');
+        setDnaWeight('');
+        setDnaSni(false);
+        setDnaTheme('');
+        setDnaPrimaryColor('');
+        setDnaSecondaryColor('');
+        setDnaAccentColor('');
+        setDnaPattern('');
+        setDnaLogoPosition('');
+        setDnaBrandLock(true);
+        setDnaShapeLock(true);
+        setDnaMaterialLock(true);
+        setDnaGraphicLock(true);
+        setDnaLogoLock(true);
+        setDnaColorLock(true);
+        setDnaNotes('');
+      }
+      setMessage({ type: 'success', text: 'Product DNA berhasil direset ke data tersimpan.' });
+    } catch (err) {
+      setMessage({ type: 'error', text: (err as Error).message });
+    } finally {
+      setDnaLoading(false);
+    }
+  };
+
+  const handleSaveDna = async () => {
+    setSavingDna(true);
+    setMessage(null);
+    try {
+      const payload = {
+        sku: dnaSku,
+        brand: dnaBrand,
+        category: dnaCategory,
+        ageRange: dnaAgeRange,
+        gender: dnaGender,
+        material: dnaMaterial,
+        finishing: dnaFinishing,
+        visor: dnaVisor,
+        buckle: dnaBuckle,
+        weight: dnaWeight,
+        sni: dnaSni,
+        theme: dnaTheme,
+        primaryColor: dnaPrimaryColor,
+        secondaryColor: dnaSecondaryColor,
+        accentColor: dnaAccentColor,
+        pattern: dnaPattern,
+        logoPosition: dnaLogoPosition,
+        brandLock: dnaBrandLock,
+        shapeLock: dnaShapeLock,
+        materialLock: dnaMaterialLock,
+        graphicLock: dnaGraphicLock,
+        logoLock: dnaLogoLock,
+        colorLock: dnaColorLock,
+        notes: dnaNotes,
+      };
+
+      const response = await fetch(`/api/products/${id}/dna`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data?.error ?? 'Gagal menyimpan Product DNA.');
+      }
+
+      setMessage({ type: 'success', text: 'Product DNA berhasil disimpan ke database.' });
+    } catch (err) {
+      setMessage({ type: 'error', text: (err as Error).message });
+    } finally {
+      setSavingDna(false);
+    }
+  };
+
+  const handleCopyPrompt = async () => {
+    setPromptCopyStatus(null);
+    setPromptCopyError(null);
+    try {
+      if (!navigator.clipboard?.writeText) {
+        throw new Error('Clipboard API tidak didukung browser ini.');
+      }
+      await navigator.clipboard.writeText(generatedPromptText);
+      setPromptCopyStatus('Prompt berhasil disalin ke clipboard!');
+      setTimeout(() => setPromptCopyStatus(null), 3500);
+    } catch (err) {
+      setPromptCopyError((err as Error).message || 'Gagal menyalin prompt.');
+      setTimeout(() => setPromptCopyError(null), 3500);
+    }
+  };
+
+  const handleRegeneratePrompt = () => {
+    setRegenerateVersion((v) => v + 1);
+    setPromptCopyStatus('Prompt berhasil diregenerasi secara deterministik.');
+    setTimeout(() => setPromptCopyStatus(null), 3500);
+  };
 
   const generatedPromptText = useMemo(() => {
     if (!product) return '';
@@ -624,7 +804,7 @@ Commercial grade, photorealistic, ultra-detailed product asset, suitable for mar
                           cacheBuster={cacheBusters[slot]}
                           isUploading={uploadingSlot === slot}
                           isDeleting={deletingSlot === slot}
-                          onSelectFile={(event) => handleFileChange(slot, event)}
+                          onSelectFile={(event: ChangeEvent<HTMLInputElement>) => handleFileChange(slot, event)}
                           onDelete={() => void handleDeleteImage(slot)}
                           note={note}
                         />
