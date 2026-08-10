@@ -9,7 +9,12 @@ import SceneBuilder from '@/components/scene-builder/SceneBuilder';
 import ProductOverviewTab from '@/components/product-workspace/ProductOverviewTab';
 import ReferenceImagesTab from '@/components/product-workspace/ReferenceImagesTab';
 import ProductDNATab from '@/components/product-workspace/ProductDNATab';
-import { BackgroundItem, getActiveBackground } from '@/lib/background/getActiveBackground';
+import {
+  BACKGROUND_STORAGE_KEY,
+  BACKGROUND_UPDATED_EVENT,
+  BackgroundItem,
+  getActiveBackground,
+} from '@/lib/background/getActiveBackground';
 
 type ProductStatus = 'Active' | 'Draft' | 'Inactive';
 
@@ -233,7 +238,28 @@ export default function ProductDetailPage() {
       return;
     }
 
-    setActiveBackground(getActiveBackground());
+    const refreshActiveBackground = () => {
+      setActiveBackground(getActiveBackground());
+    };
+
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === BACKGROUND_STORAGE_KEY) {
+        refreshActiveBackground();
+      }
+    };
+
+    refreshActiveBackground();
+    window.addEventListener(BACKGROUND_UPDATED_EVENT, refreshActiveBackground);
+    window.addEventListener('focus', refreshActiveBackground);
+    window.addEventListener('pageshow', refreshActiveBackground);
+    window.addEventListener('storage', handleStorage);
+
+    return () => {
+      window.removeEventListener(BACKGROUND_UPDATED_EVENT, refreshActiveBackground);
+      window.removeEventListener('focus', refreshActiveBackground);
+      window.removeEventListener('pageshow', refreshActiveBackground);
+      window.removeEventListener('storage', handleStorage);
+    };
   }, [activeTab]);
 
   async function uploadImage(slot: string, file: File) {

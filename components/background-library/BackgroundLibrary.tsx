@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import BackgroundCard from '@/components/background-library/BackgroundCard';
 import UploadBackground from '@/components/background-library/UploadBackground';
+import { BACKGROUND_STORAGE_KEY, notifyBackgroundsUpdated } from '@/lib/background/getActiveBackground';
 
 type BackgroundItem = {
   id: string;
@@ -13,13 +14,11 @@ type BackgroundItem = {
   active: boolean;
 };
 
-const STORAGE_KEY = 'ai-studio-backgrounds';
-
 function loadBackgrounds(): BackgroundItem[] {
   if (typeof window === 'undefined') return [];
 
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
+    const raw = window.localStorage.getItem(BACKGROUND_STORAGE_KEY);
     if (!raw) return [];
     const parsed = JSON.parse(raw) as BackgroundItem[];
     return Array.isArray(parsed) ? parsed : [];
@@ -29,7 +28,8 @@ function loadBackgrounds(): BackgroundItem[] {
 }
 
 function saveBackgrounds(items: BackgroundItem[]) {
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+  window.localStorage.setItem(BACKGROUND_STORAGE_KEY, JSON.stringify(items));
+  notifyBackgroundsUpdated();
 }
 
 function formatFileSize(size: number) {

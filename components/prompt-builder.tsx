@@ -3,7 +3,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import SceneBuilder from '@/components/scene-builder/SceneBuilder';
 import { cameras, lights, scenes } from '@/lib/data';
-import { BackgroundItem, getActiveBackground } from '@/lib/background/getActiveBackground';
+import {
+  BACKGROUND_STORAGE_KEY,
+  BACKGROUND_UPDATED_EVENT,
+  BackgroundItem,
+  getActiveBackground,
+} from '@/lib/background/getActiveBackground';
 import type { ProductDnaPromptContext } from '@/lib/prompt/types';
 
 type StoredProduct = {
@@ -105,7 +110,28 @@ export function PromptBuilder() {
   }, []);
 
   useEffect(() => {
-    setActiveBackground(getActiveBackground());
+    const refreshActiveBackground = () => {
+      setActiveBackground(getActiveBackground());
+    };
+
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === BACKGROUND_STORAGE_KEY) {
+        refreshActiveBackground();
+      }
+    };
+
+    refreshActiveBackground();
+    window.addEventListener(BACKGROUND_UPDATED_EVENT, refreshActiveBackground);
+    window.addEventListener('focus', refreshActiveBackground);
+    window.addEventListener('pageshow', refreshActiveBackground);
+    window.addEventListener('storage', handleStorage);
+
+    return () => {
+      window.removeEventListener(BACKGROUND_UPDATED_EVENT, refreshActiveBackground);
+      window.removeEventListener('focus', refreshActiveBackground);
+      window.removeEventListener('pageshow', refreshActiveBackground);
+      window.removeEventListener('storage', handleStorage);
+    };
   }, []);
 
   const product = products.find((item) => item.id === productId) ?? products[0];
