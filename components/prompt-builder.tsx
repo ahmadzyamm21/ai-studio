@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import SceneBuilder from '@/components/scene-builder/SceneBuilder';
 import { cameras, lights, scenes } from '@/lib/data';
 import { BackgroundItem, getActiveBackground } from '@/lib/background/getActiveBackground';
+import type { ProductDnaPromptContext } from '@/lib/prompt/types';
 
 type StoredProduct = {
   id: string;
@@ -27,6 +28,8 @@ type ReferenceImage = {
   filename: string;
   path: string;
 };
+
+type ProductDnaApiResponse = Partial<ProductDnaPromptContext> | null;
 
 const referenceSlots = [
   'Front',
@@ -66,6 +69,7 @@ export function PromptBuilder() {
   const [notice, setNotice] = useState('');
   const [activeBackground, setActiveBackground] = useState<BackgroundItem | null>(null);
   const [referenceImages, setReferenceImages] = useState<Record<string, ReferenceImage>>({});
+  const [productDna, setProductDna] = useState<ProductDnaApiResponse>(null);
 
   useEffect(() => {
     async function fetchProducts() {
@@ -109,6 +113,40 @@ export function PromptBuilder() {
   const camera = cameras.find((item) => item.id === cameraId) ?? cameras[0];
   const light = lights.find((item) => item.id === lightId) ?? lights[0];
   const referenceCount = referenceSlots.filter((slot) => Boolean(referenceImages[slot])).length;
+  const dnaContext: ProductDnaPromptContext = {
+    sku: productDna?.sku ?? product?.code ?? '',
+    brand: productDna?.brand ?? product?.brand ?? '',
+    category: productDna?.category ?? product?.category ?? '',
+    ageRange: productDna?.ageRange ?? product?.targetAge ?? '',
+    gender: productDna?.gender ?? '',
+    material: productDna?.material ?? product?.shellMaterial ?? '',
+    finishing: productDna?.finishing ?? '',
+    visor: productDna?.visor ?? product?.visor ?? '',
+    buckle: productDna?.buckle ?? product?.buckle ?? '',
+    weight: productDna?.weight ?? '',
+    sni: productDna?.sni ?? false,
+    theme: productDna?.theme ?? product?.theme ?? '',
+    primaryColor: productDna?.primaryColor ?? '',
+    secondaryColor: productDna?.secondaryColor ?? '',
+    accentColor: productDna?.accentColor ?? '',
+    pattern: productDna?.pattern ?? product?.theme ?? '',
+    logoPosition: productDna?.logoPosition ?? 'Top reference image',
+    brandLock: productDna?.brandLock ?? true,
+    shapeLock: productDna?.shapeLock ?? true,
+    materialLock: productDna?.materialLock ?? true,
+    graphicLock: productDna?.graphicLock ?? true,
+    logoLock: productDna?.logoLock ?? true,
+    colorLock: productDna?.colorLock ?? true,
+    notes: productDna?.notes ?? product?.description ?? '',
+  };
+  const productDnaLockLines = [
+    dnaContext.brandLock ? 'Strictly preserve brand identity, typography, and styling.' : '',
+    dnaContext.shapeLock ? 'Preserve exact product geometry, dimensions, and proportions. Do not morph or redesign the product.' : '',
+    dnaContext.materialLock ? 'Preserve exact surface finish, texture, and material response.' : '',
+    dnaContext.graphicLock ? 'Preserve decal placement, graphics, scale, and artwork.' : '',
+    dnaContext.logoLock ? 'Preserve all logos and identifying marks exactly as shown in the reference images.' : '',
+    dnaContext.colorLock ? 'Preserve exact color palette.' : '',
+  ].filter(Boolean);
 
   useEffect(() => {
     if (!product?.id || product.id === fallbackProduct.id) {
@@ -148,6 +186,29 @@ export function PromptBuilder() {
     void fetchReferenceImages();
   }, [product]);
 
+  useEffect(() => {
+    if (!product?.id || product.id === fallbackProduct.id) {
+      setProductDna(null);
+      return;
+    }
+
+    async function fetchProductDna() {
+      try {
+        const response = await fetch(`/api/products/${product.id}/dna`);
+        if (!response.ok) {
+          throw new Error('Failed to load Product DNA.');
+        }
+
+        const data = await response.json();
+        setProductDna((data.dna ?? null) as ProductDnaApiResponse);
+      } catch {
+        setProductDna(null);
+      }
+    }
+
+    void fetchProductDna();
+  }, [product]);
+
   const prompt = useMemo(() => {
     if (!product) return '';
     const backgroundInstruction = activeBackground
@@ -158,17 +219,22 @@ export function PromptBuilder() {
 
 PRODUCT IDENTITY
 Product: ${product.name}
-Code: ${product.code}
-Brand: ${product.brand}
-Category: ${product.category}
-Target age: ${product.targetAge ?? ''}
-Theme: ${product.theme ?? ''}
+Code: ${dnaContext.sku || product.code}
+Brand: ${dnaContext.brand || product.brand}
+Category: ${dnaContext.category || product.category}
+Target age: ${dnaContext.ageRange || 'Not specified'}
+Gender: ${dnaContext.gender || 'Not specified'}
+Theme: ${dnaContext.theme || 'Not specified'}
+Pattern: ${dnaContext.pattern || 'Not specified'}
+Logo position: ${dnaContext.logoPosition || 'Not specified'}
 
 PRODUCT LOCK
-Preserve the exact original shell geometry, proportions, ${product.shellMaterial ?? 'original material'}, black trim, screw positions, visor mounting points, strap and ${product.buckle ?? 'original buckle'}. Keep the ${product.visor ?? 'original'} visor closed and physically accurate.
+Preserve the exact original shell geometry, proportions, ${dnaContext.material || 'original material'}, black trim, screw positions, visor mounting points, strap and ${dnaContext.buckle || 'original buckle'}. Keep the ${dnaContext.visor || 'original'} visor closed and physically accurate.
+Finishing: ${dnaContext.finishing || 'Not specified'}.
+Weight / Certification: ${dnaContext.weight || 'Standard'} ${dnaContext.sni ? '(Certified)' : ''}.
 
 GRAPHIC & BRAND LOCK
-Preserve the exact ${product.theme ?? 'original'} artwork, colors, decal scale and placement. Preserve the RetroRide logo on the top of the helmet exactly as shown in the top-view reference. The logo must remain visible, correctly spelled, undistorted and in its original position. Do not invent, remove or reposition any graphic.
+Preserve the exact ${dnaContext.theme || 'original'} artwork, colors, decal scale and placement. Preserve the RetroRide logo on the top of the helmet exactly as shown in the top-view reference. The logo must remain visible, correctly spelled, undistorted and in its original position. Do not invent, remove or reposition any graphic.
 
 REFERENCE PRIORITY
 Front establishes the main shape. Front-left and front-right establish three-quarter geometry. Left and right establish side graphics. Back establishes rear construction. Top view establishes the upper shell shape and brand-logo placement.
@@ -182,6 +248,15 @@ ${camera.text}. Use smooth, stable movement and a realistic focal length. No wid
 LIGHTING
 ${light.text}. Preserve the real product colors, gloss and material response. Avoid blown highlights that hide the logo or graphics.
 
+PRODUCT DNA COLORS
+Primary (${dnaContext.primaryColor || 'Not specified'}), Secondary (${dnaContext.secondaryColor || 'Not specified'}), Accent (${dnaContext.accentColor || 'Not specified'}).
+
+PRODUCT DNA LOCKS
+${productDnaLockLines.length ? productDnaLockLines.map((line) => `- ${line}`).join('\n') : 'No Product DNA locks enabled.'}
+
+PRODUCT DNA NOTES
+${dnaContext.notes || 'No additional Product DNA notes.'}
+
 MOTION & PHYSICS LOCK
 The helmet is rigid. No morphing, stretching, wobbling or independent movement of parts. The visor stays closed. Reflections move naturally with the camera and lighting.
 
@@ -190,7 +265,7 @@ No redesign, changed logo, misspelled text, altered decal, extra vents, missing 
 
 OUTPUT
 Commercial quality, photorealistic, sharp product detail, ${aspect} aspect ratio, ${duration}, suitable for marketplace and social-media advertising.`;
-  }, [activeBackground, product, scene, camera, light, platform, aspect, duration]);
+  }, [activeBackground, product, scene, camera, light, platform, aspect, duration, dnaContext]);
 
   async function copyPrompt() {
     await navigator.clipboard.writeText(prompt);
@@ -383,30 +458,7 @@ Commercial quality, photorealistic, sharp product detail, ${aspect} aspect ratio
           description: product.description,
         }}
         dna={{
-          sku: product.code,
-          brand: product.brand,
-          category: product.category,
-          ageRange: product.targetAge ?? '',
-          gender: '',
-          material: product.shellMaterial ?? '',
-          finishing: '',
-          visor: product.visor ?? '',
-          buckle: product.buckle ?? '',
-          weight: '',
-          sni: false,
-          theme: product.theme ?? '',
-          primaryColor: '',
-          secondaryColor: '',
-          accentColor: '',
-          pattern: product.theme ?? '',
-          logoPosition: 'Top reference image',
-          brandLock: true,
-          shapeLock: true,
-          materialLock: true,
-          graphicLock: true,
-          logoLock: true,
-          colorLock: true,
-          notes: product.description ?? '',
+          ...dnaContext,
         }}
         activeBackground={activeBackground}
         platform={platform}

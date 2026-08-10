@@ -536,9 +536,10 @@ export default function ProductDetailPage() {
     const materialText = dnaMaterial || product.shellMaterial || 'Premium Material';
     const visorText = dnaVisor || product.visor || '';
     const buckleText = dnaBuckle || product.buckle || '';
-    const primaryCol = dnaPrimaryColor || 'Primary';
-    const secondaryCol = dnaSecondaryColor || 'Secondary';
-    const accentCol = dnaAccentColor || 'Accent';
+    const genderText = dnaGender || 'Not specified';
+    const primaryCol = dnaPrimaryColor || 'Not specified';
+    const secondaryCol = dnaSecondaryColor || 'Not specified';
+    const accentCol = dnaAccentColor || 'Not specified';
     const patternText = dnaPattern || 'Geometric';
     const notesText = dnaNotes || 'None';
 
@@ -571,8 +572,10 @@ PRODUCT IDENTITY & DNA
 ${brandLine}
 - Category: ${categoryText}
 ${ageLine}
+- Gender: ${genderText}
 - Theme & Graphics: ${themeText} (${patternText})
-- Colors: ${primaryCol} (Primary), ${secondaryCol} (Secondary), ${accentCol} (Accent)
+- Colors: Primary (${primaryCol}), Secondary (${secondaryCol}), Accent (${accentCol})
+- Logo Position: ${dnaLogoPosition || 'Not specified'}
 
 CONSTRUCTION & MATERIALS
 - Material / Surface: ${materialText} (${dnaFinishing || 'Standard finish'})

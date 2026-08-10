@@ -22,9 +22,10 @@ export function buildProductDnaBlock({ product, dna }: BuildProductDnaBlockOptio
   const materialText = fallback(dna.material, product.shellMaterial ?? 'Premium Material');
   const visorText = fallback(dna.visor, product.visor ?? '');
   const buckleText = fallback(dna.buckle, product.buckle ?? '');
-  const primaryColor = fallback(dna.primaryColor, 'Primary');
-  const secondaryColor = fallback(dna.secondaryColor, 'Secondary');
-  const accentColor = fallback(dna.accentColor, 'Accent');
+  const genderText = fallback(dna.gender, 'Not specified');
+  const primaryColor = fallback(dna.primaryColor, 'Not specified');
+  const secondaryColor = fallback(dna.secondaryColor, 'Not specified');
+  const accentColor = fallback(dna.accentColor, 'Not specified');
   const patternText = fallback(dna.pattern, 'Original product graphic');
   const logoPosition = fallback(dna.logoPosition, 'Original reference position');
   const notes = fallback(dna.notes, 'No additional Product DNA notes.');
@@ -35,8 +36,10 @@ export function buildProductDnaBlock({ product, dna }: BuildProductDnaBlockOptio
 - Brand: ${brandText}
 - Category: ${categoryText}
 - Target Demographic / Age: ${ageText || 'Not specified'}
+- Gender: ${genderText}
 - Theme & Graphics: ${themeText} (${patternText})
-- Colors: ${primaryColor} (Primary), ${secondaryColor} (Secondary), ${accentColor} (Accent)
+- Colors: Primary (${primaryColor}), Secondary (${secondaryColor}), Accent (${accentColor})
+- Logo Position: ${logoPosition}
 
 CONSTRUCTION & MATERIALS
 - Material / Surface: ${materialText}${dna.finishing ? ` (${dna.finishing})` : ''}
