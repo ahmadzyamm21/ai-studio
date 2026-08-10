@@ -5,9 +5,11 @@ import { ArrowLeft, Box, Check, FileText, Layers, Palette, Pencil, RotateCcw, Sh
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import ReferenceImageCard from '@/components/reference-images/ReferenceImageCard';
+import SceneBuilder from '@/components/scene-builder/SceneBuilder';
 import ProductOverviewTab from '@/components/product-workspace/ProductOverviewTab';
 import ReferenceImagesTab from '@/components/product-workspace/ReferenceImagesTab';
 import ProductDNATab from '@/components/product-workspace/ProductDNATab';
+import { BackgroundItem, getActiveBackground } from '@/lib/background/getActiveBackground';
 
 type ProductStatus = 'Active' | 'Draft' | 'Inactive';
 
@@ -108,6 +110,7 @@ export default function ProductDetailPage() {
   const [promptCopyStatus, setPromptCopyStatus] = useState<string | null>(null);
   const [promptCopyError, setPromptCopyError] = useState<string | null>(null);
   const [regenerateVersion, setRegenerateVersion] = useState(0);
+  const [activeBackground, setActiveBackground] = useState<BackgroundItem | null>(null);
 
   useEffect(() => {
     if (!id) {
@@ -224,6 +227,14 @@ export default function ProductDetailPage() {
 
     void fetchImages(product.id);
   }, [product?.id]);
+
+  useEffect(() => {
+    if (activeTab !== 'Prompt Factory') {
+      return;
+    }
+
+    setActiveBackground(getActiveBackground());
+  }, [activeTab]);
 
   async function uploadImage(slot: string, file: File) {
     if (!id) return;
@@ -1500,6 +1511,41 @@ Commercial grade, photorealistic, ultra-detailed product asset, suitable for mar
 
                             </section>
                           </div>
+                        </div>
+
+                        <div className="mt-6">
+                          <SceneBuilder
+                            product={product}
+                            dna={{
+                              sku: dnaSku,
+                              brand: dnaBrand,
+                              category: dnaCategory,
+                              ageRange: dnaAgeRange,
+                              gender: dnaGender,
+                              material: dnaMaterial,
+                              finishing: dnaFinishing,
+                              visor: dnaVisor,
+                              buckle: dnaBuckle,
+                              weight: dnaWeight,
+                              sni: dnaSni,
+                              theme: dnaTheme,
+                              primaryColor: dnaPrimaryColor,
+                              secondaryColor: dnaSecondaryColor,
+                              accentColor: dnaAccentColor,
+                              pattern: dnaPattern,
+                              logoPosition: dnaLogoPosition,
+                              brandLock: dnaBrandLock,
+                              shapeLock: dnaShapeLock,
+                              materialLock: dnaMaterialLock,
+                              graphicLock: dnaGraphicLock,
+                              logoLock: dnaLogoLock,
+                              colorLock: dnaColorLock,
+                              notes: dnaNotes,
+                            }}
+                            activeBackground={activeBackground}
+                            platform={promptPlatform}
+                            aspectRatio="1:1"
+                          />
                         </div>
                       </div>
                     </div>

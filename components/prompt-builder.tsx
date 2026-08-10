@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import SceneBuilder from '@/components/scene-builder/SceneBuilder';
 import { cameras, lights, scenes } from '@/lib/data';
 import { BackgroundItem, getActiveBackground } from '@/lib/background/getActiveBackground';
 
@@ -131,162 +132,211 @@ Commercial quality, photorealistic, sharp product detail, ${aspect} aspect ratio
     setNotice('File TXT berhasil dibuat.');
   }
 
+  if (!product) return null;
+
   return (
-    <div className="grid items-start gap-6 lg:grid-cols-2">
-      <div className="space-y-6">
-        <section className="card">
-          <div className="form-grid">
-            <label>
-              Product
-              <select value={productId} onChange={(event) => setProductId(event.target.value)}>
-                {products.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.name}
-                  </option>
-                ))}
-              </select>
-            </label>
+    <div className="space-y-6">
+      <div className="grid items-start gap-6 lg:grid-cols-2">
+        <div className="space-y-6">
+          <section className="card">
+            <div className="form-grid">
+              <label>
+                Product
+                <select value={productId} onChange={(event) => setProductId(event.target.value)}>
+                  {products.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
 
-            <label>
-              Platform
-              <select value={platform} onChange={(event) => setPlatform(event.target.value)}>
-                <option>Google Flow / Veo</option>
-                <option>Imagen</option>
-                <option>ChatGPT Image</option>
-                <option>Kling</option>
-              </select>
-            </label>
+              <label>
+                Platform
+                <select value={platform} onChange={(event) => setPlatform(event.target.value)}>
+                  <option>Google Flow / Veo</option>
+                  <option>Imagen</option>
+                  <option>ChatGPT Image</option>
+                  <option>Kling</option>
+                </select>
+              </label>
 
-            <label>
-              Scene
-              <select value={sceneId} onChange={(event) => setSceneId(event.target.value)}>
-                {scenes.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.name}
-                  </option>
-                ))}
-              </select>
-            </label>
+              <label>
+                Scene
+                <select value={sceneId} onChange={(event) => setSceneId(event.target.value)}>
+                  {scenes.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
 
-            <label>
-              Camera
-              <select value={cameraId} onChange={(event) => setCameraId(event.target.value)}>
-                {cameras.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.name}
-                  </option>
-                ))}
-              </select>
-            </label>
+              <label>
+                Camera
+                <select value={cameraId} onChange={(event) => setCameraId(event.target.value)}>
+                  {cameras.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
 
-            <label>
-              Lighting
-              <select value={lightId} onChange={(event) => setLightId(event.target.value)}>
-                {lights.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.name}
-                  </option>
-                ))}
-              </select>
-            </label>
+              <label>
+                Lighting
+                <select value={lightId} onChange={(event) => setLightId(event.target.value)}>
+                  {lights.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
 
-            <label>
-              Aspect Ratio
-              <select value={aspect} onChange={(event) => setAspect(event.target.value)}>
-                <option>1:1</option>
-                <option>9:16</option>
-                <option>16:9</option>
-              </select>
-            </label>
+              <label>
+                Aspect Ratio
+                <select value={aspect} onChange={(event) => setAspect(event.target.value)}>
+                  <option>1:1</option>
+                  <option>9:16</option>
+                  <option>16:9</option>
+                </select>
+              </label>
 
-            <label>
-              Duration
-              <select value={duration} onChange={(event) => setDuration(event.target.value)}>
-                <option>6 seconds</option>
-                <option>8 seconds</option>
-                <option>10 seconds</option>
-              </select>
-            </label>
-          </div>
-
-          <div
-            className={`reference-status ${referenceCount === 7 ? 'complete' : ''}`}
-            style={{ marginTop: 24 }}
-          >
-            <div>
-              <strong>Reference readiness</strong>
-              <span>{referenceCount}/7 photos recorded</span>
+              <label>
+                Duration
+                <select value={duration} onChange={(event) => setDuration(event.target.value)}>
+                  <option>6 seconds</option>
+                  <option>8 seconds</option>
+                  <option>10 seconds</option>
+                </select>
+              </label>
             </div>
 
-            <div className="progress-track">
-              <span style={{ width: `${(referenceCount / 7) * 100}%` }} />
-            </div>
-
-            <small>
-              {referenceCount === 7
-                ? 'Semua sudut sudah lengkap.'
-                : 'Lengkapi 7 foto pada menu Products. Top view wajib menampilkan logo.'}
-            </small>
-          </div>
-        </section>
-
-        <section className="card prompt-output">
-          <div className="prompt-output-header">
-            <div>
-              <div className="eyebrow">Generated prompt</div>
-              <strong>{product?.code}</strong>
-            </div>
-
-            <div className="prompt-actions">
-              <button className="btn" onClick={copyPrompt}>
-                Copy Prompt
-              </button>
-              <button className="btn secondary" onClick={exportTxt}>
-                Export TXT
-              </button>
-            </div>
-          </div>
-
-          {notice && <div className="inline-notice">{notice}</div>}
-
-          <textarea
-            readOnly
-            value={prompt}
-            aria-label="Generated prompt"
-            style={{ minHeight: 360, maxHeight: 520, overflowY: 'auto' }}
-          />
-        </section>
-      </div>
-
-      <div className="space-y-6">
-        <section className="card prompt-output">
-          <div className="prompt-output-header">
-            <div>
-              <div className="eyebrow">Background</div>
-              <strong>Active background</strong>
-            </div>
-          </div>
-
-          <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
-            {activeBackground ? (
-              <div className="flex flex-col gap-4">
-                <img
-                  src={activeBackground.path}
-                  alt={activeBackground.name}
-                  className="w-full rounded-3xl object-cover"
-                  style={{ maxHeight: 500 }}
-                />
-                <div className="space-y-2">
-                  <p className="text-sm font-semibold text-slate-950">{activeBackground.name}</p>
-                  <p className="text-sm text-slate-500">Active background selected</p>
-                </div>
+            <div
+              className={`reference-status ${referenceCount === 7 ? 'complete' : ''}`}
+              style={{ marginTop: 24 }}
+            >
+              <div>
+                <strong>Reference readiness</strong>
+                <span>{referenceCount}/7 photos recorded</span>
               </div>
-            ) : (
-              <p className="text-sm text-slate-500">No active background selected.</p>
-            )}
-          </div>
-        </section>
+
+              <div className="progress-track">
+                <span style={{ width: `${(referenceCount / 7) * 100}%` }} />
+              </div>
+
+              <small>
+                {referenceCount === 7
+                  ? 'Semua sudut sudah lengkap.'
+                  : 'Lengkapi 7 foto pada menu Products. Top view wajib menampilkan logo.'}
+              </small>
+            </div>
+          </section>
+
+          <section className="card prompt-output">
+            <div className="prompt-output-header">
+              <div>
+                <div className="eyebrow">Generated prompt</div>
+                <strong>{product.code}</strong>
+              </div>
+
+              <div className="prompt-actions">
+                <button className="btn" onClick={copyPrompt}>
+                  Copy Prompt
+                </button>
+                <button className="btn secondary" onClick={exportTxt}>
+                  Export TXT
+                </button>
+              </div>
+            </div>
+
+            {notice && <div className="inline-notice">{notice}</div>}
+
+            <textarea
+              readOnly
+              value={prompt}
+              aria-label="Generated prompt"
+              style={{ minHeight: 360, maxHeight: 520, overflowY: 'auto' }}
+            />
+          </section>
+        </div>
+
+        <div className="space-y-6">
+          <section className="card prompt-output">
+            <div className="prompt-output-header">
+              <div>
+                <div className="eyebrow">Background</div>
+                <strong>Active background</strong>
+              </div>
+            </div>
+
+            <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
+              {activeBackground ? (
+                <div className="flex flex-col gap-4">
+                  <img
+                    src={activeBackground.path}
+                    alt={activeBackground.name}
+                    className="w-full rounded-3xl object-cover"
+                    style={{ maxHeight: 500 }}
+                  />
+                  <div className="space-y-2">
+                    <p className="text-sm font-semibold text-slate-950">{activeBackground.name}</p>
+                    <p className="text-sm text-slate-500">Active background selected</p>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-sm text-slate-500">No active background selected.</p>
+              )}
+            </div>
+          </section>
+        </div>
       </div>
+
+      <SceneBuilder
+        product={{
+          id: product.id,
+          code: product.code,
+          name: product.name,
+          brand: product.brand,
+          category: product.category,
+          theme: product.theme,
+          targetAge: product.targetAge,
+          shellMaterial: product.shellMaterial,
+          visor: product.visor,
+          buckle: product.buckle,
+          description: product.description,
+        }}
+        dna={{
+          sku: product.code,
+          brand: product.brand,
+          category: product.category,
+          ageRange: product.targetAge,
+          gender: '',
+          material: product.shellMaterial,
+          finishing: '',
+          visor: product.visor,
+          buckle: product.buckle,
+          weight: '',
+          sni: false,
+          theme: product.theme,
+          primaryColor: '',
+          secondaryColor: '',
+          accentColor: '',
+          pattern: product.theme,
+          logoPosition: 'Top reference image',
+          brandLock: true,
+          shapeLock: true,
+          materialLock: true,
+          graphicLock: true,
+          logoLock: true,
+          colorLock: true,
+          notes: product.description,
+        }}
+        activeBackground={activeBackground}
+        platform={platform}
+        aspectRatio={aspect}
+      />
     </div>
   );
 }
