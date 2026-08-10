@@ -11,15 +11,32 @@ type StoredProduct = {
   name: string;
   brand: string;
   category: string;
-  targetAge: string;
-  theme: string;
-  shellMaterial: string;
-  visor: string;
-  buckle: string;
+  targetAge: string | null;
+  theme: string | null;
+  shellMaterial: string | null;
+  visor: string | null;
+  buckle: string | null;
   status: string;
-  description: string;
+  description: string | null;
   referenceFiles?: Record<string, string>;
 };
+
+type ReferenceImage = {
+  id: string;
+  slot: string;
+  filename: string;
+  path: string;
+};
+
+const referenceSlots = [
+  'Front',
+  'Front Left',
+  'Left',
+  'Right',
+  'Back',
+  'Front Right',
+  'Top',
+] as const;
 
 const fallbackProduct: StoredProduct = {
   id: 'captain-america',
@@ -48,19 +65,39 @@ export function PromptBuilder() {
   const [duration, setDuration] = useState('8 seconds');
   const [notice, setNotice] = useState('');
   const [activeBackground, setActiveBackground] = useState<BackgroundItem | null>(null);
+  const [referenceImages, setReferenceImages] = useState<Record<string, ReferenceImage>>({});
 
   useEffect(() => {
-    const saved = window.localStorage.getItem('ai-studio-products');
-    if (!saved) return;
-    try {
-      const parsed = JSON.parse(saved) as StoredProduct[];
-      if (parsed.length) {
-        setProducts(parsed);
-        setProductId(parsed[0].id);
+    async function fetchProducts() {
+      try {
+        const response = await fetch('/api/products');
+        if (!response.ok) {
+          throw new Error('Failed to load products.');
+        }
+
+        const data = await response.json();
+        const apiProducts = (data.products ?? []) as StoredProduct[];
+        if (apiProducts.length) {
+          setProducts(apiProducts);
+          setProductId(apiProducts[0].id);
+          return;
+        }
+      } catch {
+        const saved = window.localStorage.getItem('ai-studio-products');
+        if (!saved) return;
+        try {
+          const parsed = JSON.parse(saved) as StoredProduct[];
+          if (parsed.length) {
+            setProducts(parsed);
+            setProductId(parsed[0].id);
+          }
+        } catch {
+          setProducts([fallbackProduct]);
+        }
       }
-    } catch {
-      setProducts([fallbackProduct]);
     }
+
+    void fetchProducts();
   }, []);
 
   useEffect(() => {
@@ -71,7 +108,45 @@ export function PromptBuilder() {
   const scene = scenes.find((item) => item.id === sceneId) ?? scenes[0];
   const camera = cameras.find((item) => item.id === cameraId) ?? cameras[0];
   const light = lights.find((item) => item.id === lightId) ?? lights[0];
-  const referenceCount = Object.keys(product?.referenceFiles ?? {}).length;
+  const referenceCount = referenceSlots.filter((slot) => Boolean(referenceImages[slot])).length;
+
+  useEffect(() => {
+    if (!product?.id || product.id === fallbackProduct.id) {
+      const fallbackImages = product?.referenceFiles ?? {};
+      const mappedFallbackImages = Object.entries(fallbackImages).reduce<Record<string, ReferenceImage>>(
+        (acc, [slot, path]) => {
+          acc[slot] = { id: slot, slot, filename: path, path };
+          return acc;
+        },
+        {},
+      );
+      setReferenceImages(mappedFallbackImages);
+      return;
+    }
+
+    async function fetchReferenceImages() {
+      try {
+        const response = await fetch(`/api/products/${product.id}/images`);
+        if (!response.ok) {
+          throw new Error('Failed to load reference images.');
+        }
+
+        const data = await response.json();
+        const mappedImages = ((data.images ?? []) as ReferenceImage[]).reduce<Record<string, ReferenceImage>>(
+          (acc, image) => {
+            acc[image.slot] = image;
+            return acc;
+          },
+          {},
+        );
+        setReferenceImages(mappedImages);
+      } catch {
+        setReferenceImages({});
+      }
+    }
+
+    void fetchReferenceImages();
+  }, [product]);
 
   const prompt = useMemo(() => {
     if (!product) return '';
@@ -86,14 +161,14 @@ Product: ${product.name}
 Code: ${product.code}
 Brand: ${product.brand}
 Category: ${product.category}
-Target age: ${product.targetAge}
-Theme: ${product.theme}
+Target age: ${product.targetAge ?? ''}
+Theme: ${product.theme ?? ''}
 
 PRODUCT LOCK
-Preserve the exact original shell geometry, proportions, ${product.shellMaterial}, black trim, screw positions, visor mounting points, strap and ${product.buckle}. Keep the ${product.visor} visor closed and physically accurate.
+Preserve the exact original shell geometry, proportions, ${product.shellMaterial ?? 'original material'}, black trim, screw positions, visor mounting points, strap and ${product.buckle ?? 'original buckle'}. Keep the ${product.visor ?? 'original'} visor closed and physically accurate.
 
 GRAPHIC & BRAND LOCK
-Preserve the exact ${product.theme} artwork, colors, decal scale and placement. Preserve the RetroRide logo on the top of the helmet exactly as shown in the top-view reference. The logo must remain visible, correctly spelled, undistorted and in its original position. Do not invent, remove or reposition any graphic.
+Preserve the exact ${product.theme ?? 'original'} artwork, colors, decal scale and placement. Preserve the RetroRide logo on the top of the helmet exactly as shown in the top-view reference. The logo must remain visible, correctly spelled, undistorted and in its original position. Do not invent, remove or reposition any graphic.
 
 REFERENCE PRIORITY
 Front establishes the main shape. Front-left and front-right establish three-quarter geometry. Left and right establish side graphics. Back establishes rear construction. Top view establishes the upper shell shape and brand-logo placement.
@@ -311,19 +386,19 @@ Commercial quality, photorealistic, sharp product detail, ${aspect} aspect ratio
           sku: product.code,
           brand: product.brand,
           category: product.category,
-          ageRange: product.targetAge,
+          ageRange: product.targetAge ?? '',
           gender: '',
-          material: product.shellMaterial,
+          material: product.shellMaterial ?? '',
           finishing: '',
-          visor: product.visor,
-          buckle: product.buckle,
+          visor: product.visor ?? '',
+          buckle: product.buckle ?? '',
           weight: '',
           sni: false,
-          theme: product.theme,
+          theme: product.theme ?? '',
           primaryColor: '',
           secondaryColor: '',
           accentColor: '',
-          pattern: product.theme,
+          pattern: product.theme ?? '',
           logoPosition: 'Top reference image',
           brandLock: true,
           shapeLock: true,
@@ -331,7 +406,7 @@ Commercial quality, photorealistic, sharp product detail, ${aspect} aspect ratio
           graphicLock: true,
           logoLock: true,
           colorLock: true,
-          notes: product.description,
+          notes: product.description ?? '',
         }}
         activeBackground={activeBackground}
         platform={platform}
