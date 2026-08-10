@@ -60,13 +60,13 @@ export default function ProductOverviewTab({ product, overviewFields }: ProductO
             </div>
           </div>
           <p className="mt-4 text-sm leading-6 text-slate-500">
-            Overview tab menampilkan semua detail umum. Tab lain akan siap di masa depan untuk asset dan generasi konten.
+            Overview tab menampilkan semua detail umum. Lengkapi reference images dan Product DNA sebelum menyusun prompt final.
           </p>
         </section>
         <section className="rounded-3xl border border-slate-200 bg-slate-50 p-6">
           <p className="text-sm uppercase tracking-[0.2em] text-slate-500">Quick links</p>
           <div className="mt-4 grid gap-3">
-            {['Reference Images', 'Product DNA', 'Prompt Factory', 'Generated Images', 'Generated Videos', 'Marketplace'].map((tab) => (
+            {['Reference Images', 'Product DNA', 'Prompt Factory'].map((tab) => (
               <div key={tab} className="rounded-3xl bg-white px-4 py-4 text-sm text-slate-700 shadow-sm">
                 {tab}
               </div>

@@ -1,19 +1,39 @@
 # AI Studio V1 Products
 
-Welcome to **AI Studio**, a specialized content production platform built for **RetroRide children's helmets** and commercial AI asset generation.
+AI Studio is now finalized as a local-first Prompt Factory for RetroRide product content workflows.
 
-## 🚀 Quick Navigation
+## Final Scope
 
-- **[Architecture Guide](docs/ARCHITECTURE.md)** — Detailed breakdown of current stack (Next.js App Router, Prisma, SQLite, Local Storage) vs. planned cloud architecture.
-- **[Product Roadmap](docs/ROADMAP.md)** — Phased development milestones from V1 prototype to marketplace integration.
-- **[Project Rules & Standards](docs/PROJECT_RULES.md)** — Engineering guidelines, coding conventions, and agent directives.
-- **[Sprint Backlog](docs/SPRINTS.md)** — Historical sprint records and active task backlogs.
-- **[Changelog](docs/CHANGELOG.md)** — Release history and version notes.
+AI Studio supports this workflow:
 
----
+Product
+-> Reference Images
+-> Product DNA
+-> Background Library
+-> Scene / Camera / Lighting
+-> Prompt Factory
+-> Copy / Export Prompt
 
-## 🛡️ Project Overview
+The final prompt is used externally in:
 
-AI Studio provides marketing and product teams with precise control over AI-generated product videos and images using **Product DNA** and **7-Slot Reference Images** (Front, Front-Left, Left, Right, Back, Front-Right, Top with logo). 
+- Google Flow
+- Veo
+- Other AI generation platforms
 
-Designed for seamless integration with AI generator platforms (Google Flow / Veo, Imagen, ChatGPT Image, Kling).
+AI Studio does not generate images or videos internally. It does not call OpenAI image generation, Hugging Face image models, or store generated image/video assets.
+
+## Quick Navigation
+
+- [Architecture Guide](docs/ARCHITECTURE.md)
+- [Product Roadmap](docs/ROADMAP.md)
+- [Project Rules & Standards](docs/PROJECT_RULES.md)
+- [Sprint Backlog](docs/SPRINTS.md)
+- [Changelog](docs/CHANGELOG.md)
+
+## Core Modules
+
+- Products: product identity and workspace entry point.
+- Reference Images: 7-slot visual source of truth for prompt construction.
+- Product DNA: product attributes, visual locks, brand locks, and prompt constraints.
+- Background Library: local background references used as prompt context.
+- Prompt Factory: scene, camera, lighting, platform, aspect, duration, final prompt preview, copy, and TXT export.

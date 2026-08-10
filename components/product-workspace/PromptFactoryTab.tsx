@@ -1,5 +1,3 @@
-import { Check, RotateCcw, Sparkles } from 'lucide-react';
-import AIReadinessCard from '@/components/product-workspace/AIReadinessCard';
 import GeneratedPromptPanel from '@/components/product-workspace/GeneratedPromptPanel';
 import PromptTemplateSelector from '@/components/product-workspace/PromptTemplateSelector';
 

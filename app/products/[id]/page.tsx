@@ -8,7 +8,6 @@ import ReferenceImageCard from '@/components/reference-images/ReferenceImageCard
 import ProductOverviewTab from '@/components/product-workspace/ProductOverviewTab';
 import ReferenceImagesTab from '@/components/product-workspace/ReferenceImagesTab';
 import ProductDNATab from '@/components/product-workspace/ProductDNATab';
-import PromptFactoryTab from '@/components/product-workspace/PromptFactoryTab';
 
 type ProductStatus = 'Active' | 'Draft' | 'Inactive';
 
@@ -56,9 +55,6 @@ const tabs = [
   'Reference Images',
   'Product DNA',
   'Prompt Factory',
-  'Generated Images',
-  'Generated Videos',
-  'Marketplace',
 ] as const;
 
 type Tab = (typeof tabs)[number];
@@ -1501,6 +1497,7 @@ Commercial grade, photorealistic, ultra-detailed product asset, suitable for mar
                                   className="w-full resize-none rounded-2xl border border-slate-200 bg-slate-900 p-4 font-mono text-xs leading-relaxed text-slate-100 outline-none"
                                 />
                               </div>
+
                             </section>
                           </div>
                         </div>

@@ -1,29 +1,51 @@
 # AI Studio Product Roadmap
 
-This roadmap defines the strategic evolution of **AI Studio** for RetroRide children's helmets and commercial AI content generation.
+This roadmap defines AI Studio as a prompt-only production tool for RetroRide product content workflows.
 
----
+## Final Product Scope
+
+AI Studio is a Prompt Factory. The supported workflow is:
+
+Product
+-> Reference Images
+-> Product DNA
+-> Background Library
+-> Scene / Camera / Lighting
+-> Prompt Factory
+-> Copy / Export Prompt
+
+Prompts are used externally in Google Flow, Veo, or other AI platforms.
+
+AI Studio does not perform internal image or video generation.
 
 ## Phase 1: V1 Foundation & Local-First Prototype (Completed)
-* [x] Next.js 16 App Router setup with responsive dashboard and navigation sidebar.
-* [x] Prisma ORM and SQLite local database integration.
-* [x] Product CRUD workspace with status filtering and details.
-* [x] 7-Slot Reference Images UI (Front, Front-Left, Left, Right, Back, Front-Right, Top with logo).
-* [x] Interactive Prompt Factory for Google Flow / Veo with automatic Product, Graphic, and Negative locks.
 
-## Phase 2: Product DNA Polish & UX Refinement (Current / S4.1B)
-* [x] Product DNA UI overhaul with modern cards, section icons, completion progress bars, and required field indicators.
-* [x] Save and Reset state interactions for Product DNA profiles.
+- [x] Next.js App Router setup with dashboard and navigation sidebar.
+- [x] Prisma ORM and SQLite local database integration.
+- [x] Product CRUD workspace.
+- [x] 7-slot Reference Images workflow.
+- [x] Prompt Factory for Google Flow / Veo style prompts.
 
-## Phase 3: Cloud Persistence & Supabase Storage (Upcoming / S4.2)
-* [ ] Migrate reference image storage from local filesystem (`public/uploads`) to **Supabase Storage** buckets.
-* [ ] Full end-to-end database persistence of Product DNA specifications to PostgreSQL.
-* [ ] Environment configuration hardening and Supabase client integration.
+## Phase 2: Product DNA & Prompt Quality (Completed)
 
-## Phase 4: Asset Library & Content Scheduler
-* [ ] Implement full `/assets` module for managing generated AI images and videos.
-* [ ] Implement `/content` calendar planner for social media and marketplace publishing campaigns.
+- [x] Product DNA UI with identity, construction, visual identity, and protection locks.
+- [x] Save and reset interactions for Product DNA profiles.
+- [x] Prompt output built from product data, reference readiness, scene, camera, lighting, and platform settings.
 
-## Phase 5: Enterprise Multi-User & Marketplace Integration
-* [ ] Supabase Auth implementation with team roles.
-* [ ] Direct API integrations with advanced commercial AI video and image rendering pipelines.
+## Phase 3: Background Library (Completed)
+
+- [x] Local background upload and selection.
+- [x] Active background context included in prompt wording.
+
+## Phase 4: Prompt Factory Closure (Completed)
+
+- [x] Removed internal Generate Image UI.
+- [x] Removed internal OpenAI / Hugging Face image generation routes and helpers.
+- [x] Removed GeneratedAsset runtime usage.
+- [x] Kept Copy Prompt and Export TXT as final output actions.
+
+## Future Options
+
+- [ ] Improve prompt templates and platform-specific prompt presets.
+- [ ] Add saved prompt recipes if persistence is needed.
+- [ ] Optional Supabase persistence for multi-device product/reference data.
